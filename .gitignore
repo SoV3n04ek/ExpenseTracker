@@ -1,0 +1,50 @@
+# -----------------------------------------------
+# 1. VISUAL STUDIO / C# BACKEND (Folder: 'backend/')
+# -----------------------------------------------
+
+# Build Artifacts
+**/[Bb]in/
+**/[Oo]bj/
+
+# Caches and Intermediate Files
+**/.vs/
+**/*.pdb
+**/*.suo
+**/*.user
+**/*.log
+**/*.sdf
+**/*.vshost.exe
+**/*.vshost.exe.config
+*.aps
+*.zip
+
+# NuGet Packages
+**/packages/
+**/NuGetScratch/
+
+# Database Files
+# Exclude the SQLite development database file
+backend/**/*.db
+backend/**/*.sqlite
+backend/**/*.sqlite-wal
+backend/**/*.sqlite-shm
+
+# Rider/JetBrains IDE files
+.idea/
+
+# -----------------------------------------------
+# 2. ANGULAR / NODE.JS FRONTEND (Future Folder: 'frontend/')
+# -----------------------------------------------
+
+# Dependency folder
+node_modules/
+frontend/node_modules/
+
+# Build Artifacts
+**/dist/
+**/npm-debug.log*
+**/yarn-error.log*
+
+# Environment and Temporary Files
+.env
+.DS_Store
