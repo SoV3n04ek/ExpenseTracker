@@ -1,4 +1,5 @@
 ﻿using ExpenseTracker.Application.DTOs;
+using ExpenseTracker.Application.Exceptions;
 using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Domain.Entities;
 using ExpenseTracker.Infrastructure.Persistence;
@@ -17,6 +18,11 @@ namespace ExpenseTracker.Application.Services
 
         public async Task<int> AddExpenseAsync(CreateExpenseDto dto)
         {
+            if (dto.Amount <= 0)
+            {
+                throw new ValidationException($"Expense amount cannot be <= 0");
+            }
+
             var expense = new Expense
             {
                 Description = dto.Description,
