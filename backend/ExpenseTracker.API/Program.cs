@@ -2,7 +2,10 @@ using ExpenseTracker.API.Middleware;
 using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Application.Services;
 using ExpenseTracker.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore; 
+using Microsoft.EntityFrameworkCore;
+using FluentValidation;
+using ExpenseTracker.Application.Validators;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,10 +17,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     ));
 
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
+
+builder.Services.AddValidatorsFromAssemblyContaining<CreateExpenseDtoValidator>();
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 var app = builder.Build();
 

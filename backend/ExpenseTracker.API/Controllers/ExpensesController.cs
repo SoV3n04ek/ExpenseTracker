@@ -1,6 +1,8 @@
 ﻿using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
+using ExpenseTracker.Application.Exceptions;
 
 namespace ExpenseTracker.API.Controllers
 {
@@ -9,24 +11,28 @@ namespace ExpenseTracker.API.Controllers
     public class ExpensesController : ControllerBase
     {
         private readonly IExpenseService _expenseService;
+        private readonly IValidator<CreateExpenseDto> _validator;
 
-        public ExpensesController(IExpenseService expenseService)
+        public ExpensesController(IExpenseService expenseService, IValidator<CreateExpenseDto> validator)
         {
             _expenseService = expenseService;
+            _validator = validator;
         }
 
         // POST api/expenses
         [HttpPost]
         public async Task<IActionResult> CreateExpense(CreateExpenseDto dto)
         {
-            if (dto.Amount <= 0)
+            var validationResult = await _validator.ValidateAsync(dto);
+
+            if (!validationResult.IsValid)
             {
-                return BadRequest("Amount must be positive.");
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
             }
 
             int id = await _expenseService.AddExpenseAsync(dto);
 
-            return CreatedAtAction(nameof(GetExpense), new { id = id }, dto);
+            return CreatedAtAction(nameof(GetExpense), new { id }, dto);
         }
 
         // GET api/expenses
@@ -57,6 +63,13 @@ namespace ExpenseTracker.API.Controllers
         {
             try
             {
+                var validationResult = await _validator.ValidateAsync(dto);
+
+                if (!validationResult.IsValid)
+                {
+                    throw new Application.Exceptions.ValidationException(validationResult.Errors);
+                }
+
                 await _expenseService.UpdateExpenseAsync(id, dto);
                 return NoContent(); // 204 No content is standard for successful updates
             }

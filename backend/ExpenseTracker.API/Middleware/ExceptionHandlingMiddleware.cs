@@ -34,28 +34,34 @@ namespace ExpenseTracker.API.Middleware
 
             // Default to 500 internal server error
             var statusCode = HttpStatusCode.InternalServerError;
-            var message = "An unexpected error occured.";
+            object errorResponse = new { message = "An unexcpected error occured." };
 
-            if (exception is ValidationException)
+            if (exception is ValidationException validationException)
             {
                 statusCode = HttpStatusCode.BadRequest;
-                message = exception.Message;
+                errorResponse = new
+                {
+                    statusCode = (int)statusCode,
+                    title = "One or more validation error occured.",
+                    errors = validationException.Errors
+                };
             }
             else if (exception is KeyNotFoundException)
             {
                 statusCode = HttpStatusCode.NotFound;
-                message = "The requested resource was not found.";
+                errorResponse = new { message = "The requested resource was not found." };
+            }
+            else
+            {
+                Console.WriteLine($"exception: " + exception.Message);
             }
 
             context.Response.StatusCode = (int)statusCode;
 
-            var response = new
-            {
-                statusCode = (int)statusCode,
-                message = message
-            };
-
-            return context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            return context.Response.WriteAsync(
+                JsonSerializer.Serialize(
+                    errorResponse, 
+                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
         }
     }
 }
