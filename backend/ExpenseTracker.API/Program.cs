@@ -5,7 +5,7 @@ using ExpenseTracker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using ExpenseTracker.Application.Validators;
-using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +17,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     ));
 
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateExpenseDtoValidator>();
 builder.Services.AddControllers();
@@ -24,6 +25,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddIdentity<IdentityUser<int>, IdentityRole<int>>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 8;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>();
 
 var app = builder.Build();
 
