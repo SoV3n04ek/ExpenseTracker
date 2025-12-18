@@ -2,10 +2,11 @@
 using ExpenseTracker.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
-using ExpenseTracker.Application.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ExpenseTracker.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ExpensesController : ControllerBase
