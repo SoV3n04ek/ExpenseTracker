@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ExpenseTracker.Domain.Identity;
+using System.ComponentModel.DataAnnotations;
 
 namespace ExpenseTracker.Domain.Entities
 {
@@ -12,6 +13,8 @@ namespace ExpenseTracker.Domain.Entities
         public DateTimeOffset Date { get; set; }
         public int CategoryId { get; set; }
         public Category Category { get; set; } = null!;
-
+       
+        public int UserId { get; set; }
+        public ApplicationUser User { get; set; } = null!;
     }
 }

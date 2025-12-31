@@ -1,9 +1,13 @@
 ﻿using ExpenseTracker.Domain.Entities;
+using ExpenseTracker.Domain.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseTracker.Infrastructure.Persistence
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext 
+        : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
@@ -13,6 +17,8 @@ namespace ExpenseTracker.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Category>().HasData(
                 new Category { Id = 1, Name = "Groceries" },
                 new Category { Id = 2, Name = "Leisure" },
@@ -27,7 +33,11 @@ namespace ExpenseTracker.Infrastructure.Persistence
                 .Property(c => c.Id)
                 .ValueGeneratedNever();
 
-            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Expense>()
+                .HasOne(e => e.User)
+                .WithMany(u => u.Expenses)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

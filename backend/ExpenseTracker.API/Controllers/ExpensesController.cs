@@ -47,37 +47,23 @@ namespace ExpenseTracker.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ExpenseDto>> GetExpense(int id)
         {
-            try
-            {
-                var expense = await _expenseService.GetExpenseByIdAsync(id);
-                return Ok(expense);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
+            var expense = await _expenseService.GetExpenseByIdAsync(id);
+            return Ok(expense);
         }
 
         // PUT api/expenses/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateResult(int id, CreateExpenseDto dto)
         {
-            try
-            {
-                var validationResult = await _validator.ValidateAsync(dto);
+            var validationResult = await _validator.ValidateAsync(dto);
 
-                if (!validationResult.IsValid)
-                {
-                    throw new Application.Exceptions.ValidationException(validationResult.Errors);
-                }
-
-                await _expenseService.UpdateExpenseAsync(id, dto);
-                return NoContent(); // 204 No content is standard for successful updates
-            }
-            catch (KeyNotFoundException)
+            if (!validationResult.IsValid)
             {
-                return NotFound();
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
             }
+
+            await _expenseService.UpdateExpenseAsync(id, dto);
+            return NoContent(); // 204 No content is standard for successful updates
         }
 
         // DELETE api/expenses/5

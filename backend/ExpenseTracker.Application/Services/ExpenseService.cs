@@ -10,25 +10,25 @@ namespace ExpenseTracker.Application.Services
     public class ExpenseService : IExpenseService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ExpenseService(ApplicationDbContext context)
+        public ExpenseService(ApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context;
+            _currentUserService = currentUserService;
         }
+
+        private int GetCurrentUserId() => int.Parse(_currentUserService.UserId ?? "0");
 
         public async Task<int> AddExpenseAsync(CreateExpenseDto dto)
         {
-            if (dto.Amount <= 0)
-            {
-                throw new ValidationException($"Expense amount cannot be <= 0");
-            }
-
             var expense = new Expense
             {
                 Description = dto.Description,
                 Amount = dto.Amount,
                 Date = dto.Date,
-                CategoryId = dto.CategoryId
+                CategoryId = dto.CategoryId,
+                UserId = GetCurrentUserId()
             };
 
             _context.Expenses.Add(expense);
@@ -38,8 +38,11 @@ namespace ExpenseTracker.Application.Services
 
         public async Task<IEnumerable<ExpenseDto>> GetAllExpensesAsync()
         {
+            var currentUserId = GetCurrentUserId();
+
             return await _context.Expenses
                 .Include(e => e.Category)
+                .Where(e => e.UserId == currentUserId)
                 .Select(e => new ExpenseDto(
                     e.Id,
                     e.Description,
@@ -52,9 +55,12 @@ namespace ExpenseTracker.Application.Services
 
         public async Task<ExpenseDto> GetExpenseByIdAsync(int id)
         {
+            var currentUserId = GetCurrentUserId();
+
             var expense = await _context.Expenses
                 .Include(e => e.Category)
-                .FirstOrDefaultAsync(e => e.Id == id);
+                .FirstOrDefaultAsync(e => 
+                    e.Id == id && e.UserId == currentUserId);
 
             if (expense is null)
             {
@@ -71,7 +77,9 @@ namespace ExpenseTracker.Application.Services
 
         public async Task UpdateExpenseAsync(int id, CreateExpenseDto dto)
         {
-            var expense = await _context.Expenses.FindAsync(id);
+            var currentUser = GetCurrentUserId();
+            var expense = await _context.Expenses.FirstOrDefaultAsync(e => 
+                e.Id == id && e.UserId == currentUser);
 
             if (expense is null)
             {
@@ -87,13 +95,16 @@ namespace ExpenseTracker.Application.Services
         }
         public async Task DeleteExpenseAsync(int id)
         {
-            var expense = await _context.Expenses.FindAsync(id);
+            var currentUser = GetCurrentUserId();
+            //var expense = await _context.Expenses.FindAsync(id);
+            var expense = await _context.Expenses.FirstOrDefaultAsync(e =>
+                e.Id == id && e.UserId == currentUser);
 
-            if (expense != null)
-            {
-                _context.Expenses.Remove(expense);
-                await _context.SaveChangesAsync();
-            }
+            if (expense is null)
+                throw new KeyNotFoundException($"Expense with ID {id} not found.");
+
+            _context.Expenses.Remove(expense);
+            await _context.SaveChangesAsync();
         }
 
     }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using System.Runtime.InteropServices;
 
 namespace ExpenseTracker.Infrastructure.Persistence
 {
@@ -9,10 +8,16 @@ namespace ExpenseTracker.Infrastructure.Persistence
     {
         public ApplicationDbContext CreateDbContext(string[] args)
         {
+            var projectPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "ExpenseTracker.API"));
+
+            if (!Directory.Exists(projectPath))
+            {
+                projectPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "ExpenseTracker.API");
+            }
+
             var configuration = new ConfigurationBuilder()
-                .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "..\\ExpenseTracker.API"))
+                .SetBasePath(projectPath)
                 .AddJsonFile("appsettings.json")
-                .AddJsonFile("appsettings.Development.json", optional: true)
                 .Build();
 
             var connectionString = configuration.GetConnectionString("DefaultConnection");
