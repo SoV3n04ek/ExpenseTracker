@@ -23,7 +23,7 @@ namespace ExpenseTracker.API.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unhandled exception occured during request processing.");
+                _logger.LogError(ex, $"An unhandled exception occured during request processing. \n{ex.Message}");
                 await HandleExceptionAsync(httpContext, ex);
             }
         }

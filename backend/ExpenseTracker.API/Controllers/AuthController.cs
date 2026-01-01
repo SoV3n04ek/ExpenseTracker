@@ -30,5 +30,22 @@ namespace ExpenseTracker.API.Controllers
             return Ok(response);
         }
 
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail(int userId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return BadRequest("Token is required");
+            }
+
+            var result = await _authService.ConfirmEmailAsync(userId, token);
+
+            if (result)
+            {
+                return Ok(new { message = "Email confirmed successfully! You can now log in. " });
+            }
+
+            return BadRequest("Email confirmation failed. The token might be invalid or expired. ");
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ExpenseTracker.Application.DTOs;
+using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Application.Services;
 using ExpenseTracker.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -13,11 +14,13 @@ public class AuthServiceTests
     private readonly Mock<UserManager<ApplicationUser>> _mockUserMgr;
     private readonly Mock<IConfiguration> _mockConfig;
     private readonly AuthService _authService;
+    private readonly Mock<IEmailService> _mockEmailService;
 
     public AuthServiceTests()
     {
         _mockUserMgr = MockHelpers.MockUserManager<ApplicationUser>();
         _mockConfig = new Mock<IConfiguration>();
+        _mockEmailService = new Mock<IEmailService>();
 
         // Setup mock config values that the service expects 
         _mockConfig.Setup(conf => conf["Jwt:Key"]).Returns("SuperSecretTestKey1234567890123456");
@@ -25,7 +28,7 @@ public class AuthServiceTests
         _mockConfig.Setup(conf => conf["Jwt:Audience"]).Returns("TestAudience");
         _mockConfig.Setup(conf => conf["Jwt:ExpireMinutes"]).Returns("60");
 
-        _authService = new AuthService(_mockUserMgr.Object, _mockConfig.Object);
+        _authService = new AuthService(_mockUserMgr.Object, _mockConfig.Object, _mockEmailService.Object);
     }
 
     [Fact] // --- TEST A: Valid credentials return a token ---
@@ -39,6 +42,7 @@ public class AuthServiceTests
             .ReturnsAsync(user);
         _mockUserMgr.Setup(x => x.CheckPasswordAsync(user, loginDto.Password))
             .ReturnsAsync(true);
+        _mockUserMgr.Setup(x => x.IsEmailConfirmedAsync(user)).ReturnsAsync(true);
 
         // Act
         var result = await _authService.LoginAsync(loginDto);
@@ -110,20 +114,26 @@ public class AuthServiceTests
         var dto = new RegisterDto { Email = "new@test.com", Password = "Password123!" };
 
         _mockUserMgr.Setup(x => x.CreateAsync(It.IsAny<ApplicationUser>(), dto.Password))
-            .ReturnsAsync(IdentityResult.Success);
+                    .ReturnsAsync(IdentityResult.Success);
+
+        _mockUserMgr.Setup(x => x.GenerateEmailConfirmationTokenAsync(It.IsAny<ApplicationUser>()))
+                    .ReturnsAsync("fake-token-123");
 
         // Act
         var result = await _authService.RegisterAsync(dto);
 
         // Assert
-        Assert.NotNull(result.Token);
-        Assert.Equal(dto.Email, result.Email);
+        Assert.Equal("Please check your email to confirm your account.", result.Message);
 
-        // Verify that CreateAsync was actually called with a user object containing the right email
+        // Verify that email was sent
+        _mockEmailService.Verify(x => x.SendEmailAsync(
+            dto.Email,
+            It.IsAny<string>(),
+            It.IsAny<string>()), Times.Once);
+
         _mockUserMgr.Verify(x => x.CreateAsync(
-            It.Is<ApplicationUser>(u => u.Email == dto.Email && u.Name == dto.Name), 
+            It.Is<ApplicationUser>(u => u.Email == dto.Email),
             dto.Password), Times.Once);
-
     }
 
     [Fact]
@@ -143,5 +153,21 @@ public class AuthServiceTests
         // Check if expiration is roughly 60 minutes from now (allowing for 1-minute execution delay)
         var expectedExpiration = DateTime.Now.AddMinutes(60);
         Assert.True((result.Expiration - expectedExpiration).Duration() < TimeSpan.FromMinutes(1));
+    }
+
+    [Fact]
+    public async Task ConfirmEmail_ValidToken_ReturnsTrue()
+    {
+        // Arrange
+        var user = new ApplicationUser { Id = 1, Email = "test@test.com" };
+        _mockUserMgr.Setup(x => x.FindByIdAsync("1")).ReturnsAsync(user);
+        _mockUserMgr.Setup(x => x.ConfirmEmailAsync(user, "valid-token"))
+                    .ReturnsAsync(IdentityResult.Success);
+
+        // Act
+        var result = await _authService.ConfirmEmailAsync(1, "valid-token");
+
+        // Assert
+        Assert.True(result);
     }
 }

@@ -14,15 +14,35 @@ namespace ExpenseTracker.Application.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, IEmailService emailService)
         {
             _userManager = userManager;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
         {
+            var existingUser = await _userManager.FindByEmailAsync(dto.Email);
+
+            if (existingUser != null)
+            {
+                if (!existingUser.EmailConfirmed)
+                {
+                    await SendConfirmationEmail(existingUser);
+                    return new AuthResponseDto
+                    {
+                        Email = dto.Email,
+                        Message = "User already exists but email is uncorfimed. A new confirmation email has been sent."
+                    };
+                }
+
+                throw new Exception("Registration failed: Email is already in use");
+            }
+
+            // normal registration flow
             var user = new ApplicationUser 
             { 
                 UserName = dto.Email, 
@@ -37,7 +57,22 @@ namespace ExpenseTracker.Application.Services
                 throw new Exception($"Registration failed: {errors}");
             }
 
-            return await GenerateAuthResponse(user);
+            await SendConfirmationEmail(user);
+
+            return new AuthResponseDto { 
+                Email = user.Email,
+                Name = user.Name,
+                Message = "Please check your email to confirm your account." };
+        }
+
+        private async Task SendConfirmationEmail(ApplicationUser user)
+        {
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var confirmationLink = $"https://localhost:7253/api/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+
+            await _emailService.SendEmailAsync(user.Email!, "Confirm your email",
+                $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>.");
+
         }
 
         public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
@@ -47,6 +82,11 @@ namespace ExpenseTracker.Application.Services
             if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
             {
                 throw new UnauthorizedAccessException("Invalid email or password");
+            }
+
+            if (!await _userManager.IsEmailConfirmedAsync(user))
+            {
+                throw new UnauthorizedAccessException("You must confirm your email before logging in.");
             }
 
             return await GenerateAuthResponse(user);
@@ -93,6 +133,16 @@ namespace ExpenseTracker.Application.Services
             };
 
             return Task.FromResult(responseDto);
+        }
+
+        public async Task<bool> ConfirmEmailAsync(int userId, string token)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null) return false;
+
+            // handles the actual verification logic
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            return result.Succeeded;
         }
     }
 }
