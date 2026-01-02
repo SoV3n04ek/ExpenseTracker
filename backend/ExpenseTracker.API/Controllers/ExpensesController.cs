@@ -73,5 +73,13 @@ namespace ExpenseTracker.API.Controllers
             await _expenseService.DeleteExpenseAsync(id);
             return NoContent();
         }
+
+        // GET /summary
+        [HttpGet("summary")]
+        public async Task<ActionResult<ExpenseSummaryDto>> GetSummary(
+            [FromQuery] int? month, [FromQuery] int? year)
+        {
+            return Ok(await _expenseService.GetSummaryAsync(month, year));
+        }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using ExpenseTracker.Application.DTOs;
-using ExpenseTracker.Application.Exceptions;
 using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Domain.Entities;
 using ExpenseTracker.Infrastructure.Persistence;
@@ -107,5 +106,41 @@ namespace ExpenseTracker.Application.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task<ExpenseSummaryDto> GetSummaryAsync(int? month, int? year)
+        {
+            var userId = GetCurrentUserId();
+
+            // fallback to current month/year if not provided
+            int targetMonth = month ?? DateTimeOffset.UtcNow.Month;
+            int targetYear = year ?? DateTimeOffset.UtcNow.Year;
+
+            // all expenses for the current user in current month
+            var query = _context.Expenses
+                .Where(e => e.UserId == userId &&
+                        e.Date.Month == targetMonth &&
+                        e.Date.Year == targetYear);
+
+            var totalAmount = await query.SumAsync(e => e.Amount);
+
+            // group by category name
+            var categoryData = await query
+                .GroupBy(e => e.Category.Name)
+                .Select(g => new CategorySummaryDto
+                {
+                    CategoryName = g.Key,
+                    Amount = g.Sum(e => e.Amount),
+                    // Calculate percentage
+                    Percentage = totalAmount > 0
+                        ? (double)(g.Sum(e => e.Amount) / totalAmount * 100)
+                        : 0
+                })
+                .ToListAsync();
+
+            return new ExpenseSummaryDto
+            {
+                TotalAmount = totalAmount,
+                Categories = categoryData
+            };                
+        }
     }
 }
