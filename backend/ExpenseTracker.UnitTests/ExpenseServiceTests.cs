@@ -56,5 +56,41 @@ namespace ExpenseTracker.UnitTests
             Assert.Equal("Food", result.Categories[0].CategoryName);
             Assert.Equal(100, result.Categories[0].Percentage);
         }
+
+        [Fact]
+        public async Task GetSummaryAsync_ShouldOnlyIncludeCurrentUsersData()
+        {
+            // Arrange
+            var category = new Category { Id = 1, Name = "Food" };
+            var date = new DateTimeOffset(2025, 11, 15, 0, 0, 0, TimeSpan.Zero);
+
+            _context.Expenses.AddRange(new List<Expense>
+            {
+                // Expense for current user (ID 1)
+                new() { Id = 1, Description = "My Coffee", Amount = 5, Date = date, Category = category, UserId = 1 },
+                // Expense for DIFFERENT user (ID 2)
+                new() { Id = 2, Description = "Stranger's Gold", Amount = 5000, Date = date, Category = category, UserId = 2 }
+            });
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _service.GetSummaryAsync(11, 2025);
+
+            // Assert
+            Assert.Equal(5, result.TotalAmount); // Should NOT be 5005
+            Assert.Single(result.Categories);
+            Assert.Equal(5, result.Categories[0].Amount);
+        }
+
+        [Fact]
+        public async Task GetSummaryAsync_WithNoData_ShouldReturnZeroSummary()
+        {
+            // Act (Database is empty by default because of Guid.NewGuid() name)
+            var result = await _service.GetSummaryAsync(01, 2025);
+
+            // Assert
+            Assert.Equal(0, result.TotalAmount);
+            Assert.Empty(result.Categories);
+        }
     }
 }
