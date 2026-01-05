@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using ExpenseTracker.Application.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,6 +95,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
 var app = builder.Build();
 
 app.UseCustomExceptionHandler();
@@ -112,3 +115,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

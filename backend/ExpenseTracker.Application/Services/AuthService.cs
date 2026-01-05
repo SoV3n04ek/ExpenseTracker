@@ -1,8 +1,10 @@
-﻿using ExpenseTracker.Application.DTOs;
+﻿using ExpenseTracker.Application.Configuration;
+using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration; // to read JWT secret
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;     // for security key
 using System.IdentityModel.Tokens.Jwt;    // for JwtSecurityToken
 using System.Security.Claims;
@@ -13,13 +15,13 @@ namespace ExpenseTracker.Application.Services
     public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
+        private readonly JwtSettings _jwtSettings;
 
-        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, IEmailService emailService)
+        public AuthService(UserManager<ApplicationUser> userManager, IOptions<JwtSettings> jwtOptions, IEmailService emailService)
         {
             _userManager = userManager;
-            _configuration = configuration;
+            _jwtSettings = jwtOptions.Value;
             _emailService = emailService;
         }
 
@@ -103,18 +105,18 @@ namespace ExpenseTracker.Application.Services
             };
 
             // 2. Get the secret key from configuration
-            var jwtKey = _configuration["Jwt:Key"] ??
+            var jwtKey = _jwtSettings.Key ??
                 throw new InvalidOperationException("Jwt key is not configured.");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
             // 3. Set expiration and signing credentials
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expiration = DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"] ?? "60"));
+            var expiration = DateTime.Now.AddMinutes(Convert.ToDouble(_jwtSettings.ExpireMinutes));
 
             // 4. Create the token structure
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
                 claims: claims,
                 expires: expiration,
                 signingCredentials: credentials
