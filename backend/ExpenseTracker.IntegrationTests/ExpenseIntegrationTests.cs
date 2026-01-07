@@ -42,5 +42,40 @@ namespace ExpenseTracker.IntegrationTests
             json.Should().Contain("\"totalAmount\":");
             json.Should().Contain("\"categoryName\":");
         }
+
+        [Fact]
+        public async Task Forbidden_UserCannotAccessOtherUsersExpense()
+        {
+            // Arrange
+            // 1. Login as User A and create an expense
+            await RegisterAndLoginAsync("userA@test.com", "Password123!", "User A");
+            var expenseDto = new
+            {
+                Description = "User A Secret Expense",
+                Amount = 100m,
+                Date = DateTimeOffset.UtcNow,
+                CategoryId = 1
+            };
+
+            var createResponse = await Client.PostAsJsonAsync("/api/expenses", expenseDto);
+            // Use the Location header or deserialize to get the ID
+            var createdExpense = await createResponse.Content.ReadFromJsonAsync<ExpenseDto>();
+            var expenseIdFromA = createdExpense!.Id;
+
+            // 2. Now login as User B
+            await RegisterAndLoginAsync("userB@test.com", "Password123!", "User B");
+
+            // Act
+            // User B tries to GET User A's expense
+            var getResponse = await Client.GetAsync($"/api/expenses/{expenseIdFromA}");
+
+            // User B tries to DELETE User A's expense
+            var deleteResponse = await Client.DeleteAsync($"/api/expenses/{expenseIdFromA}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+
+        }
     }
 }
