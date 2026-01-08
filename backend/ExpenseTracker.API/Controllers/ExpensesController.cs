@@ -77,9 +77,13 @@ namespace ExpenseTracker.API.Controllers
         // GET /summary
         [HttpGet("summary")]
         public async Task<ActionResult<ExpenseSummaryDto>> GetSummary(
-            [FromQuery] int? month, [FromQuery] int? year)
+            [FromQuery] DateTimeOffset? startDate, 
+            [FromQuery] DateTimeOffset? endDate)
         {
-            return Ok(await _expenseService.GetSummaryAsync(month, year));
+            var start = startDate ?? DateTimeOffset.UtcNow.AddDays(-30);
+            var end = endDate ?? DateTimeOffset.UtcNow;
+
+            return Ok(await _expenseService.GetSummaryAsync(start, end));
         }
     }
 }

@@ -9,6 +9,6 @@ namespace ExpenseTracker.Application.Interfaces
         Task<int> AddExpenseAsync(CreateExpenseDto dto);
         Task UpdateExpenseAsync(int id, CreateExpenseDto dto);
         Task DeleteExpenseAsync(int id);
-        Task<ExpenseSummaryDto> GetSummaryAsync(int? month, int? year);
+        Task<ExpenseSummaryDto> GetSummaryAsync(DateTimeOffset startDate, DateTimeOffset endDate);
     }
 }

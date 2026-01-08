@@ -106,32 +106,27 @@ namespace ExpenseTracker.Application.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<ExpenseSummaryDto> GetSummaryAsync(int? month, int? year)
+        public async Task<ExpenseSummaryDto> GetSummaryAsync(DateTimeOffset startDate, DateTimeOffset endDate)
         {
             var userId = GetCurrentUserId();
 
-            // fallback to current month/year if not provided
-            int targetMonth = month ?? DateTimeOffset.UtcNow.Month;
-            int targetYear = year ?? DateTimeOffset.UtcNow.Year;
-
-            // all expenses for the current user in current month
+            // Filter expenses by User AND the specific Date range
             var query = _context.Expenses
                 .Where(e => e.UserId == userId &&
-                        e.Date.Month == targetMonth &&
-                        e.Date.Year == targetYear);
+                    e.Date >= startDate &&
+                    e.Date <= endDate);
 
             var totalAmount = await query.SumAsync(e => e.Amount);
 
-            // group by category name
+            // Group by Category
             var categoryData = await query
                 .GroupBy(e => e.Category.Name)
                 .Select(g => new CategorySummaryDto
                 {
                     CategoryName = g.Key,
                     Amount = g.Sum(e => e.Amount),
-                    // Calculate percentage
                     Percentage = totalAmount > 0
-                        ? (double)(g.Sum(e => e.Amount) / totalAmount * 100)
+                        ? (double)Math.Round(g.Sum(e => e.Amount) / totalAmount * 100, 2)
                         : 0
                 })
                 .ToListAsync();
@@ -140,7 +135,7 @@ namespace ExpenseTracker.Application.Services
             {
                 TotalAmount = totalAmount,
                 Categories = categoryData
-            };                
+            };
         }
     }
 }

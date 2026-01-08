@@ -77,5 +77,29 @@ namespace ExpenseTracker.IntegrationTests
             Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
 
         }
+
+        [Fact]
+        public async Task GetSummary_WithDataRange_ReturnsOnlyExpensesWithinRange()
+        {
+            // Range
+            await RegisterAndLoginAsync("range@test.com", "Password123!");
+
+            // Create one expense inside the range, one outside
+            var inRange = new {Description = "Inside", Amount = 50m, Date = DateTimeOffset.Parse("2025-01-10"), CategoryId = 1 };
+            var outOfRange = new { Description = "Outside", Amount = 1000m, Date = DateTimeOffset.Parse("2024-12-01"), CategoryId = 1 };
+
+
+            await Client.PostAsJsonAsync("/api/expenses", inRange);
+            await Client.PostAsJsonAsync("/api/expenses", outOfRange);
+
+            // Act
+            // Request range: Jan 1st to Jan 20th 2025
+            var response = await Client.GetAsync("/api/expenses/summary?startDate=2025-01-01&endDate=2025-01-20");
+            var result = await response.Content.ReadFromJsonAsync<ExpenseSummaryDto>();
+
+            // Assert
+            Assert.Equal(50, result!.TotalAmount);
+            Assert.Single(result.Categories);
+        }
     }
 }
