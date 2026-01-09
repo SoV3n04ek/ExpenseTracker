@@ -1,9 +1,11 @@
-﻿using ExpenseTracker.Application.DTOs;
+﻿using ExpenseTracker.Application.Configuration;
+using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Application.Services;
 using ExpenseTracker.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -12,23 +14,28 @@ namespace ExpenseTracker.UnitTests.Services;
 public class AuthServiceTests
 {
     private readonly Mock<UserManager<ApplicationUser>> _mockUserMgr;
-    private readonly Mock<IConfiguration> _mockConfig;
     private readonly AuthService _authService;
     private readonly Mock<IEmailService> _mockEmailService;
 
     public AuthServiceTests()
     {
         _mockUserMgr = MockHelpers.MockUserManager<ApplicationUser>();
-        _mockConfig = new Mock<IConfiguration>();
         _mockEmailService = new Mock<IEmailService>();
 
-        // Setup mock config values that the service expects 
-        _mockConfig.Setup(conf => conf["Jwt:Key"]).Returns("SuperSecretTestKey1234567890123456");
-        _mockConfig.Setup(conf => conf["Jwt:Issuer"]).Returns("TestIssuer");
-        _mockConfig.Setup(conf => conf["Jwt:Audience"]).Returns("TestAudience");
-        _mockConfig.Setup(conf => conf["Jwt:ExpireMinutes"]).Returns("60");
+        // 1. Create a real instance of your settings class
+        var jwtSettings = new JwtSettings
+        {
+            Key = "SuperSecretTestKey1234567890123456",
+            Issuer = "TestIssuer",
+            Audience = "TestAudience",
+            ExpireMinutes = 60
+        };
 
-        _authService = new AuthService(_mockUserMgr.Object, _mockConfig.Object, _mockEmailService.Object);
+        // 2. Use Options.Create to wrap your settings
+        var options = Options.Create(jwtSettings);
+
+        // 3. Pass the options to the service
+        _authService = new AuthService(_mockUserMgr.Object, options, _mockEmailService.Object);
     }
 
     [Fact] // --- TEST A: Valid credentials return a token ---
