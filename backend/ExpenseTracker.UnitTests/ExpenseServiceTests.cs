@@ -1,4 +1,11 @@
-﻿namespace ExpenseTracker.UnitTests
+﻿using ExpenseTracker.Application.Interfaces;
+using ExpenseTracker.Application.Services;
+using ExpenseTracker.Domain.Entities;
+using ExpenseTracker.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+
+namespace ExpenseTracker.UnitTests
 {
     public class ExpenseServiceTests
     {

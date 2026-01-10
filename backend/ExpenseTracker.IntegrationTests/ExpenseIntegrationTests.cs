@@ -101,5 +101,31 @@ namespace ExpenseTracker.IntegrationTests
             Assert.Equal(50, result!.TotalAmount);
             Assert.Single(result.Categories);
         }
+
+        [Fact]
+        public async Task CreateExpense_InvalidData_Returns400BadRequest()
+        {
+            // Arrange
+            await RegisterAndLoginAsync("validation@test.com", "Password123!");
+
+            // Amount is negative, which violates our FluentValidation rule
+            var invalidExpense = new
+            {
+                Description = "",
+                Amount = -5.0m,
+                Date = DateTimeOffset.UtcNow,
+                CategoryId = 1
+            };
+
+            // Act
+            var response = await Client.PostAsJsonAsync("/api/expenses", invalidExpense);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            // Optional: Check if the error message is helpful
+            var content = await response.Content.ReadAsStringAsync();
+            content.Should().Contain("Amount must be greater than zero");
+        }
     }
 }

@@ -10,6 +10,10 @@ namespace ExpenseTracker.Application.Validators
     {
         private readonly IServiceScopeFactory _scopeFactory;
 
+        public CreateExpenseDtoValidator()
+        {
+        }
+
         public CreateExpenseDtoValidator(IServiceScopeFactory factory)
         {
             _scopeFactory = factory;
@@ -27,6 +31,16 @@ namespace ExpenseTracker.Application.Validators
             RuleFor(dto => dto.CategoryId)
                 .GreaterThan(0).WithMessage("Id must be greater than zero")
                 .MustAsync(BeExistingCategory).WithMessage("The selected category does not exist");
+
+            RuleFor(dto => dto.CategoryId)
+                .MustAsync(BeExistingCategory).WithMessage("The selected category does not exist");
+
+            RuleFor(dto => dto.Description)
+                .NotEmpty().WithMessage("Description is required")
+                .MaximumLength(200).WithMessage("Description cannot exceed 200 characters");
+
+            RuleFor(dto => dto.Amount)
+                .GreaterThan(0).WithMessage("Amount must be greater than zero");
         }
 
         private async Task<bool> BeExistingCategory(int categoryId, CancellationToken cancellationToken)
