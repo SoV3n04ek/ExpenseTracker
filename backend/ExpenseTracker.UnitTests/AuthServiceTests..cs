@@ -177,4 +177,38 @@ public class AuthServiceTests
         // Assert
         Assert.True(result);
     }
+
+    [Fact]
+    public async Task LoginAsync_UnconfirmedEmail_ThrowsUnauthorizedException()
+    {
+        // Arrange
+        var user = new ApplicationUser { Email = "unconfirmed@test.com" };
+        var loginDto = new LoginDto { Email = "unconfirmed@test.com", Password = "Password123!" };
+
+        _mockUserMgr.Setup(x => x.FindByEmailAsync(loginDto.Email)).ReturnsAsync(user);
+        _mockUserMgr.Setup(x => x.CheckPasswordAsync(user, loginDto.Password)).ReturnsAsync(true);
+        _mockUserMgr.Setup(x => x.IsEmailConfirmedAsync(user)).ReturnsAsync(false); // <--- Mocking unconfirmed
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(loginDto));
+        Assert.Equal("You must confirm your email before logging in.", ex.Message);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_ExistingUnconfirmedUser_ResendsEmail()
+    {
+        // Arrange
+        var existingUser = new ApplicationUser { Email = "already@here.com", EmailConfirmed = false };
+        var dto = new RegisterDto { Email = "already@here.com", Password = "Password123!", Name = "Retry" };
+
+        _mockUserMgr.Setup(x => x.FindByEmailAsync(dto.Email)).ReturnsAsync(existingUser);
+        _mockUserMgr.Setup(x => x.GenerateEmailConfirmationTokenAsync(existingUser)).ReturnsAsync("new-token");
+
+        // Act
+        var result = await _authService.RegisterAsync(dto);
+
+        // Assert
+        Assert.Contains("uncorfimed", result.Message); // Verifying our custom logic message
+        _mockEmailService.Verify(x => x.SendEmailAsync(dto.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
 }
