@@ -45,6 +45,21 @@ frontend/node_modules/
 **/npm-debug.log*
 **/yarn-error.log*
 
+# IDEs
+.vs/
+.vscode/
+
+# Backend
+**/bin/
+**/obj/
+
+# Frontend
+**/node_modules/
+**/dist/
+.angular/
+
+# Docker
+.docker/
 # Environment and Temporary Files
 .env
 .DS_Store
