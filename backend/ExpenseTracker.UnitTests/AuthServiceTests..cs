@@ -153,6 +153,8 @@ public class AuthServiceTests
         _mockUserMgr.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
         _mockUserMgr.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
 
+        _mockUserMgr.Setup(x => x.IsEmailConfirmedAsync(user)).ReturnsAsync(true);
+
         // Act
         var result = await _authService.LoginAsync(loginDto);
 

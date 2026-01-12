@@ -25,7 +25,7 @@ namespace ExpenseTracker.Application.Services
             {
                 Description = dto.Description,
                 Amount = dto.Amount,
-                Date = dto.Date,
+                Date = dto.Date.ToUniversalTime(),
                 CategoryId = dto.CategoryId,
                 UserId = GetCurrentUserId()
             };
@@ -111,10 +111,14 @@ namespace ExpenseTracker.Application.Services
             var userId = GetCurrentUserId();
 
             // Filter expenses by User AND the specific Date range
+            var startUtc = startDate.ToUniversalTime();
+            var endUtc = endDate.ToUniversalTime();
+
+            // Filter expenses using the UTC values
             var query = _context.Expenses
                 .Where(e => e.UserId == userId &&
-                    e.Date >= startDate &&
-                    e.Date <= endDate);
+                            e.Date >= startUtc &&
+                            e.Date <= endUtc);
 
             var totalAmount = await query.SumAsync(e => e.Amount);
 

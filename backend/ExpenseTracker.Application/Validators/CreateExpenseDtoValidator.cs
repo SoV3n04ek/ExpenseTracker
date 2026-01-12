@@ -12,39 +12,30 @@ namespace ExpenseTracker.Application.Validators
 
         public CreateExpenseDtoValidator()
         {
+            RuleFor(dto => dto.Description)
+                .NotEmpty().WithMessage("Description is required")
+                .MaximumLength(200).WithMessage("Description cannot exceed 200 characters");
+
+            RuleFor(dto => dto.Amount)
+                .GreaterThan(0).WithMessage("Amount must be greater than zero");
+
+            RuleFor(dto => dto.CategoryId)
+                .GreaterThan(0).WithMessage("Id must be greater than zero");
         }
 
-        public CreateExpenseDtoValidator(IServiceScopeFactory factory)
+        public CreateExpenseDtoValidator(IServiceScopeFactory factory) : this()
         {
             _scopeFactory = factory;
 
-            // Rule 1: Description Validation
-            RuleFor(dto => dto.Description)
-                .NotEmpty().WithMessage("Description is required")
-                .MaximumLength(200).WithMessage("Description cannot exceed 200 characters");
-
-            // Rule 2: Amount Validation
-            RuleFor(dto => dto.Amount)
-                .GreaterThan(0).WithMessage("Amount must be greater than zero");
-
-            // Rule 3: Category Existense Check (Database Validation)
-            RuleFor(dto => dto.CategoryId)
-                .GreaterThan(0).WithMessage("Id must be greater than zero")
-                .MustAsync(BeExistingCategory).WithMessage("The selected category does not exist");
-
             RuleFor(dto => dto.CategoryId)
                 .MustAsync(BeExistingCategory).WithMessage("The selected category does not exist");
 
-            RuleFor(dto => dto.Description)
-                .NotEmpty().WithMessage("Description is required")
-                .MaximumLength(200).WithMessage("Description cannot exceed 200 characters");
-
-            RuleFor(dto => dto.Amount)
-                .GreaterThan(0).WithMessage("Amount must be greater than zero");
         }
 
         private async Task<bool> BeExistingCategory(int categoryId, CancellationToken cancellationToken)
         {
+            if (_scopeFactory == null) return true;
+
             using (IServiceScope scope = _scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

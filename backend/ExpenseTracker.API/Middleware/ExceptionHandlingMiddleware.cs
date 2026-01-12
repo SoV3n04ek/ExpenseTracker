@@ -46,10 +46,20 @@ namespace ExpenseTracker.API.Middleware
                     errors = validationException.Errors
                 };
             }
+            else if (exception is UnauthorizedAccessException unauthorizedAccessException)
+            {
+                statusCode = HttpStatusCode.Unauthorized;
+                errorResponse = new { message = unauthorizedAccessException.Message };
+            }
             else if (exception is KeyNotFoundException)
             {
                 statusCode = HttpStatusCode.NotFound;
                 errorResponse = new { message = "The requested resource was not found." };
+            }
+            else if (exception.Message.Contains("Registration failed"))
+            {
+                statusCode = HttpStatusCode.BadRequest;
+                errorResponse = new {message = exception.Message};
             }
             else
             {
