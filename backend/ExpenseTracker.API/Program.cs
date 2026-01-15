@@ -65,6 +65,18 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateExpenseDtoValidator>(
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// Cors
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularDevPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "ExpenseTracker API", Version = "v1" });
@@ -100,6 +112,8 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 var app = builder.Build();
 
 app.UseCustomExceptionHandler();
+
+app.UseCors("AngularDevPolicy");
 
 if (app.Environment.IsDevelopment())
 {

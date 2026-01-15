@@ -27,6 +27,7 @@ export const AuthStore = signalStore(
         const response = await firstValueFrom(
           http.post<AuthResponseDto>('https://localhost:7253/api/auth/login', credentials)
         );
+        console.log('Login Response:', response); // ADD THIS TO VERIFY
         localStorage.setItem('token', response.token);
         patchState(store, { user: response, isLoading: false });
         router.navigate(['/dashboard']);
