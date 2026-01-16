@@ -28,5 +28,62 @@ namespace ExpenseTracker.UnitTests
             var result = _validator.TestValidate(model);
             result.ShouldHaveValidationErrorFor(x => x.Description);
         }
+
+        [Fact]
+        public void Validator_ShouldNotHaveError_WhenDataIsValid()
+        {
+            // Arrange
+            var model = new CreateExpenseDto(
+                new string('A', 11), // Description
+                10m,                  // Amount
+                DateTimeOffset.UtcNow,// Date
+                1                     // CategoryId
+            );
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert 
+            result.ShouldNotHaveAnyValidationErrors();
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-50)]
+        public void Validator_ShouldHaveError_WhenAmountIsZeroOrNegative(decimal invalidAmount)
+        {
+            // Arrange
+            var model = new CreateExpenseDto(
+                "Valid Description",
+                invalidAmount,
+                DateTimeOffset.UtcNow,
+                1);
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldHaveValidationErrorFor(x => x.Amount)
+                .WithErrorMessage("Amount must be greater than zero");
+        }
+
+        [Fact]
+        public void Validator_ShouldHaveError_WhenDescriptionIsTooLong()
+        {
+            // Arrange
+            var model = new CreateExpenseDto
+            (
+                new string('A', 101), // Max is 100
+                10,
+                DateTimeOffset.UtcNow,
+                1
+            );
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldHaveValidationErrorFor(x => x.Description)
+                  .WithErrorMessage("Description cannot exceed 100 characters.");
+        }
     }
 }
