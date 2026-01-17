@@ -1,6 +1,7 @@
 ﻿using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Domain.Identity;
 using FluentAssertions;
+using FluentAssertions.Primitives;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -167,6 +168,64 @@ namespace ExpenseTracker.IntegrationTests
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
             var content = await response.Content.ReadFromJsonAsync<dynamic>();
             // content.message should be "Invalid email or password"
+        }
+
+        [Fact]
+        public async Task UpdateExpense_UserCannotUpdateOtherUsersExpense_ReturnsNotFound()
+        {
+            // 1. Arrange - User A creates an expense
+            await RegisterAndLoginAsync("userA_update@test.com", "Password123!");
+            // CreateExpenseDto
+            var originalExpense = new 
+            {
+                Description = "User A Original",
+                Amount = 10m,
+                Date = DateTimeOffset.UtcNow,
+                CategoryId = 1
+            };
+            var createResponse = await Client.PostAsJsonAsync("/api/expenses", originalExpense);
+            var created = await createResponse.Content.ReadFromJsonAsync<ExpenseDto>();
+
+            // 2. Switch to User B
+            await RegisterAndLoginAsync("userB_hacker@test.com", "Password123!");
+            var updateDto = new { Description = "Hacked By B", Amount = 999m, Date = DateTimeOffset.UtcNow, CategoryId = 1 };
+
+            // 3. Act - User B tries to update User A's expense ID
+            var updateResponse = await Client.PutAsJsonAsync($"/api/expenses/{created!.Id}", updateDto);
+
+            // 4. Assert
+            Assert.Equal(HttpStatusCode.NotFound, updateResponse.StatusCode);
+
+            // Verify it wasn't actually changed in the DB
+            var verifyResponse = await Client.GetAsync($"/api/expenses/{created.Id}");
+            Assert.Equal(HttpStatusCode.NotFound, verifyResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetExpenses_WithoutToken_Returns401Unauthorized()
+        {
+            // Arrange 
+            // Ensure the client has no Authorization header
+            Client.DefaultRequestHeaders.Authorization = null;
+
+            // Act
+            var response = await Client.GetAsync("/api/expenses");
+
+            // Assert 
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetSummary_WithoutToken_Returns401Unauthorized()
+        {
+            // Arrange
+            Client.DefaultRequestHeaders.Authorization = null;
+
+            // Act
+            var response = await Client.GetAsync("/api/expenses/summary");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
     }
 }
