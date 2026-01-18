@@ -227,5 +227,27 @@ namespace ExpenseTracker.IntegrationTests
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
+
+        [Fact]
+        public async Task CreateExpense_WithNonExistentCategory_ReturnsBadRequest()
+        {
+            // Arrange
+            await RegisterAndLoginAsync("integrity@test.com", "Password123!");
+
+            var expenseWithBadCategory = new
+            {
+                Description = "Phantom Category Expense",
+                Amount = 50.0m,
+                Date = DateTimeOffset.UtcNow,
+                CategoryId = 99999 // This ID should not exist 
+            };
+
+            // Act
+            var response = await Client.PostAsJsonAsync("/api/expenses", expenseWithBadCategory);
+
+            // Assert
+            // If Foreign Key constraint or a Validator check, this should be 400
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
     }
 }
