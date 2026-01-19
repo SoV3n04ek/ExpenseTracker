@@ -1,22 +1,20 @@
-<aside class="w-64 bg-slate-900 h-screen fixed left-0 top-0 text-white p-4 flex flex-col">
-  <div class="text-2xl font-bold mb-10 px-2 flex items-center gap-2">
-    <div class="w-8 h-8 bg-blue-500 rounded-lg"></div>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"></div>
     Tracker
   </div>
 
-  <nav class="flex-1 space-y-2">
-    <a routerLink="/dashboard" routerLinkActive="bg-slate-800" 
-       class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition-colors">
+  <nav class="sidebar-nav">
+    <a routerLink="/dashboard" routerLinkActive="active" class="sidebar-link">
       <span>📊</span> Dashboard
     </a>
-    <a routerLink="/expenses" routerLinkActive="bg-slate-800" 
-       class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition-colors">
+    <a routerLink="/expenses" routerLinkActive="active" class="sidebar-link">
       <span>💸</span> Expenses
     </a>
   </nav>
 
-  <div class="border-t border-slate-800 pt-4 mt-auto">
-    <button (click)="logout()" class="w-full text-left flex items-center gap-3 p-3 rounded-lg hover:bg-red-900/30 text-red-400 transition-colors">
+  <div class="sidebar-footer">
+    <button (click)="logout()" class="logout-btn">
       <span>🚪</span> Logout
     </button>
   </div>

@@ -21,5 +21,7 @@ export interface RegisterDto {
 export interface AuthState {
   user: AuthResponseDto | null;
   isLoading: boolean;
-  error: string | null;
+  error: string | string[] | null;
+  status: 'idle' | 'loading' | 'unconfirmed' | 'error';
+  unconfirmedEmail?: string;
 }

@@ -1,8 +1,0 @@
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
-
-/* No Material imports here anymore, we put them in index.html */
-
-@theme {
-  --color-primary: #3b82f6; 
-}

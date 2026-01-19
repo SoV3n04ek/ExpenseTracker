@@ -1,0 +1,32 @@
+/* Registration Component Specific Styles */
+:host {
+    display: block;
+}
+
+/* Ensure the card layout matches the login page precisely */
+.card {
+    /* Utility class .card already provides base styles in styles.css */
+    /* This local file ensures isolation if specific tweaks are needed later */
+    margin: 0 auto;
+}
+
+mat-form-field {
+    margin-bottom: 0.5rem;
+}
+
+.error-alert {
+    /* Matching the global .error-alert style */
+    margin-bottom: 1rem;
+}
+
+.text-center {
+    margin-bottom: 1.5rem;
+}
+
+h2 {
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}

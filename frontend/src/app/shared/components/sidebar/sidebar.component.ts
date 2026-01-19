@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router'; // Required for routerLink
 import { AuthStore } from '../../../core/store/auth.store';
 
@@ -7,6 +7,7 @@ import { AuthStore } from '../../../core/store/auth.store';
   standalone: true,
   imports: [RouterModule], // Need this for the links to work!
   templateUrl: './sidebar.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SidebarComponent {
   private readonly store = inject(AuthStore);
