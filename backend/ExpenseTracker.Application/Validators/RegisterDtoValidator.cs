@@ -7,9 +7,17 @@ namespace ExpenseTracker.Application.Validators
     {
         public RegisterDtoValidator()
         {
-            RuleFor(x => x.Email).NotEmpty().EmailAddress();
-            RuleFor(x => x.Email).NotEmpty().MaximumLength(50);
-            RuleFor(x => x.Password).NotEmpty().MinimumLength(8);
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Name is required")
+                .MaximumLength(50).WithMessage("Name cannot exceed 50 characters");
+
+            RuleFor(x => x.Email)
+                .NotEmpty().EmailAddress()
+                .MaximumLength(100);
+
+            RuleFor(x => x.Password)
+                .NotEmpty().MinimumLength(8);
+
             RuleFor(x => x.ConfirmPassword)
                 .Equal(x => x.Password).WithMessage("Passwords do not match");
         }

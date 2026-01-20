@@ -1,4 +1,5 @@
 ﻿using ExpenseTracker.Application.DTOs;
+using ExpenseTracker.Domain.Entities;
 using ExpenseTracker.Domain.Identity;
 using FluentAssertions;
 using FluentAssertions.Primitives;
@@ -248,6 +249,51 @@ namespace ExpenseTracker.IntegrationTests
             // Assert
             // If Foreign Key constraint or a Validator check, this should be 400
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
+        public async Task UserJourney_HandleDoubleSubmitAndPreciseSummary()
+        {
+            // 1.  Arrange - register
+            await RegisterAndLoginAsync("precision@test.com", "Password123!");
+
+            // We use "odd" decimal numbers to test floating-point precision (decimal vs double)
+            var expense1 = new
+            {
+                Description = "Item 1",
+                Amount = 10.33m,
+                Date = DateTimeOffset.UtcNow,
+                CategoryId = 1 
+            };
+            var expense2 = new
+            {
+                Description = "Item 2",
+                Amount = 20.67m,
+                Date = DateTimeOffset.UtcNow,
+                CategoryId = 1 
+            };
+            // 2. Act - Simulate a "Double submit" (sending two identical requests rapidly)
+            // In a real system, you might use an Idempotecy-Key, but here we check if the DB allows duplicates 
+            var task1 = Client.PostAsJsonAsync("/api/expenses", expense1);
+            var task2 = Client.PostAsJsonAsync("/api/expenses", expense1);
+
+            await Task.WhenAll(task1, task2);
+            await Client.PostAsJsonAsync("/api/expenses", expense2);
+
+            // 3. Act - Get Summary
+            var response = await Client.GetAsync("/api/expenses/summary");
+            var summary = await response.Content.ReadFromJsonAsync<ExpenseSummaryDto>();
+
+            // 4. Assert
+            // Total should be (10.33 * 2) + 20.67 = 41.33
+            // This tests if your Service correctly uses 'decimal' to avoid the 41.329999999999998 bug
+            summary!.TotalAmount.Should().Be(41.33m);
+
+            // Check Category Percentages
+            // (20.66 / 41.33) is ~50% and (20.67 / 41.33) is ~50%
+            var category = summary.Categories.FirstOrDefault(c => c.CategoryId == 1);
+            category!.Percentage.Should().BeInRange(99.9, 100.1); // Should aggregate to 100% for the single category
+
         }
     }
 }
