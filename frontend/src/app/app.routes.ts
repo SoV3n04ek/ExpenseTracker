@@ -15,6 +15,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register-success/register-success.component').then(m => m.RegisterSuccessComponent)
   },
   {
+    path: 'confirm-email',
+    loadComponent: () => import('./features/auth/confirm-email/confirm-email.component').then(m => m.ConfirmEmailComponent)
+  },
+  {
     path: 'dashboard',
     canActivate: [authGuard], // <--- The Guard protects this!
     loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)

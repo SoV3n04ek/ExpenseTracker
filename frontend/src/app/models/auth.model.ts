@@ -22,6 +22,6 @@ export interface AuthState {
   user: AuthResponseDto | null;
   isLoading: boolean;
   error: string | string[] | null;
-  status: 'idle' | 'loading' | 'unconfirmed' | 'error';
-  unconfirmedEmail?: string;
+  status: 'idle' | 'loading' | 'unconfirmed' | 'error' | 'confirmed';
+  unconfirmedEmail: string | null;
 }

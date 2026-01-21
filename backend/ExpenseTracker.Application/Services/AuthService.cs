@@ -70,7 +70,12 @@ namespace ExpenseTracker.Application.Services
         private async Task SendConfirmationEmail(ApplicationUser user)
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var confirmationLink = $"https://localhost:7253/api/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+            
+            var encodedToken = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(
+                System.Text.Encoding.UTF8.GetBytes(token));
+
+            // Pointing to Frontend UI (ConfirmEmailComponent)
+            var confirmationLink = $"http://localhost:4200/confirm-email?userId={user.Id}&token={encodedToken}";
 
             await _emailService.SendEmailAsync(user.Email!, "Confirm your email",
                 $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>.");

@@ -1,0 +1,25 @@
+<div class="confirm-email-container">
+    <div class="status-card" [class.success]="authStore.status() === 'confirmed'"
+        [class.error]="authStore.status() === 'error'">
+
+        @if (authStore.isLoading()) {
+        <div class="loading-spinner"></div>
+        <h2>Verifying Email...</h2>
+        <p>Please wait while we confirm your account.</p>
+        }
+
+        @if (authStore.status() === 'confirmed') {
+        <div class="icon-wrapper">✅</div>
+        <h2>Success!</h2>
+        <p>Your email has been confirmed. You can now access all features of the Expense Tracker.</p>
+        <a routerLink="/login" class="btn-primary">Go to Login</a>
+        }
+
+        @if (authStore.status() === 'error') {
+        <div class="icon-wrapper">❌</div>
+        <h2>Verification Failed</h2>
+        <p>{{ authStore.error() || 'The confirmation link is invalid or has expired.' }}</p>
+        <a routerLink="/login" class="btn-primary">Back to Login</a>
+        }
+    </div>
+</div>

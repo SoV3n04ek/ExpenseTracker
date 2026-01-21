@@ -4,12 +4,14 @@ import { HttpClient } from '@angular/common/http';
 import { AuthState, AuthResponseDto, LoginDto, RegisterDto } from '../../models/auth.model'; // Cleaned up
 import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../../environment/environment';
 
 const initialState: AuthState = {
   user: null,
   isLoading: false,
   error: null,
   status: 'idle',
+  unconfirmedEmail: null,
 };
 
 export const AuthStore = signalStore(
@@ -26,7 +28,7 @@ export const AuthStore = signalStore(
       patchState(store, { isLoading: true, error: null, status: 'loading' });
       try {
         const response = await firstValueFrom(
-          http.post<AuthResponseDto>('https://localhost:7253/api/auth/login', credentials)
+          http.post<AuthResponseDto>(`${environment.apiUrl}/auth/login`, credentials)
         );
         localStorage.setItem('token', response.token);
         patchState(store, { user: response, isLoading: false, status: 'idle' });
@@ -65,7 +67,7 @@ export const AuthStore = signalStore(
       patchState(store, { isLoading: true, error: null, status: 'loading' });
       try {
         const response = await firstValueFrom(
-          http.post<AuthResponseDto>('https://localhost:7253/api/auth/register', dto)
+          http.post<AuthResponseDto>(`${environment.apiUrl}/auth/register`, dto)
         );
         patchState(store, { isLoading: false, status: 'idle' });
         router.navigate(['/register-success']);
@@ -91,13 +93,13 @@ export const AuthStore = signalStore(
     },
 
     async resendConfirmation() {
-      const email = (store as any).unconfirmedEmail?.();
+      const email = store.unconfirmedEmail();
       if (!email) return;
 
       patchState(store, { isLoading: true, error: null });
       try {
         await firstValueFrom(
-          http.post('https://localhost:7253/api/auth/resend-confirmation', { email })
+          http.post(`${environment.apiUrl}/auth/resend-confirmation`, { email })
         );
         patchState(store, {
           isLoading: false,
@@ -113,21 +115,53 @@ export const AuthStore = signalStore(
       }
     },
 
+    async confirmEmail(userId: string, token: string) {
+      patchState(store, { isLoading: true, error: null, status: 'loading' });
+      try {
+        await firstValueFrom(
+          http.get(`${environment.apiUrl}/auth/confirm-email`, {
+            params: { userId, token }
+          })
+        );
+        patchState(store, { isLoading: false, status: 'confirmed' });
+      } catch (err: any) {
+        patchState(store, {
+          isLoading: false,
+          error: err.error?.message || 'Email confirmation failed.',
+          status: 'error'
+        });
+      }
+    },
+
+    async validateSession() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      patchState(store, { isLoading: true });
+      try {
+        // GET /auth/me to verify token and get user info
+        const user = await firstValueFrom(
+          http.get<AuthResponseDto>(`${environment.apiUrl}/auth/me`)
+        );
+        patchState(store, { user, isLoading: false, status: 'idle' });
+      } catch (err) {
+        localStorage.removeItem('token');
+        patchState(store, { user: null, isLoading: false, status: 'idle' });
+      }
+    },
+
     logout() {
       localStorage.removeItem('token');
-      patchState(store, { user: null });
+      patchState(store, { user: null, status: 'idle', unconfirmedEmail: null });
       router.navigate(['/login']);
     }
+
   })),
 
   withHooks({
     onInit(store) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        // In a real app, you might want to decode the token or verify it with the backend
-        // For now, we'll just set a dummy user or keep it as is if logic allows
-        console.log('Token found in localStorage, user remains authenticated (stub)');
-      }
+      store.validateSession();
     },
   })
+
 );

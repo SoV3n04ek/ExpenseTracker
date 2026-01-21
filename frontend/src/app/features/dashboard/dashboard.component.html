@@ -1,23 +1,46 @@
-<div class="flex min-h-screen">
+<div class="dashboard-container">
   <app-sidebar></app-sidebar>
 
-  <main class="ml-64 flex-1 p-8">
-    <header class="flex justify-between items-center mb-8">
-      <div>
-        <h1 class="text-2xl font-bold">Welcome, {{ store.userName() }}!</h1>
-        <p class="text-muted text-sm">Here is what's happening with your money.</p>
-      </div>
-
-      <button mat-flat-button color="primary">
-        + Add Expense
-      </button>
+  <main class="main-content">
+    <header>
+      <h1>Welcome back, {{ authStore.userName() }}!</h1>
+      <p>Here's what's happening with your expenses.</p>
     </header>
 
-    <div class="grid grid-cols-3 gap-6">
-      <div class="card p-6 shadow-sm">
-        <p class="text-sm font-medium text-muted mb-4">Total Spent</p>
-        <h3 class="text-3xl font-bold">$2,450.00</h3>
+    @if (expenseStore.isLoading()) {
+    <div class="loading-overlay">
+      <p>Loading your dashboard...</p>
+    </div>
+    } @else if (expenseStore.summary()) {
+    <div class="dashboard-grid">
+      <!-- Total Amount Card -->
+      <div class="card total-amount-card">
+        <h3>Total Expenses</h3>
+        <div class="amount">{{ expenseStore.summary()?.totalAmount | currency }}</div>
+      </div>
+
+      <!-- Categories Card -->
+      <div class="card categories-card">
+        <h3>Spending by Category</h3>
+        <div class="category-list">
+          @for (cat of expenseStore.summary()?.categories; track cat.categoryName) {
+          <div class="category-item">
+            <div class="category-info">
+              <span class="name">{{ cat.categoryName }}</span>
+              <span class="value">{{ cat.amount | currency }} ({{ cat.percentage }}%)</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-bar" [style.width.%]="cat.percentage"></div>
+            </div>
+          </div>
+          }
+        </div>
       </div>
     </div>
+    } @else {
+    <div class="card">
+      <p>No data available. Try adding some expenses!</p>
+    </div>
+    }
   </main>
 </div>
