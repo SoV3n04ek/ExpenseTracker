@@ -32,46 +32,49 @@ namespace ExpenseTracker.API.Middleware
         {
             context.Response.ContentType = "application/json";
 
-            // Default to 500 internal server error
             var statusCode = HttpStatusCode.InternalServerError;
-            object errorResponse = new { message = "An unexcpected error occured." };
+            object errorResponse = new { message = "An unexpected error occurred." };
 
-            if (exception is ValidationException validationException)
+            switch (exception)
             {
-                statusCode = HttpStatusCode.BadRequest;
-                errorResponse = new
-                {
-                    statusCode = (int)statusCode,
-                    title = "One or more validation error occured.",
-                    errors = validationException.Errors
-                };
-            }
-            else if (exception is UnauthorizedAccessException unauthorizedAccessException)
-            {
-                statusCode = HttpStatusCode.Unauthorized;
-                errorResponse = new { message = unauthorizedAccessException.Message };
-            }
-            else if (exception is KeyNotFoundException)
-            {
-                statusCode = HttpStatusCode.NotFound;
-                errorResponse = new { message = "The requested resource was not found." };
-            }
-            else if (exception.Message.Contains("Registration failed"))
-            {
-                statusCode = HttpStatusCode.BadRequest;
-                errorResponse = new {message = exception.Message};
-            }
-            else
-            {
-                Console.WriteLine($"exception: " + exception.Message);
+                case ValidationException valEx:
+                    statusCode = HttpStatusCode.BadRequest;
+                    errorResponse = new
+                    {
+                        statusCode = (int)statusCode,
+                        title = "One or more validation errors occurred.",
+                        errors = valEx.Errors
+                    };
+                    break;
+
+                case UnauthorizedAccessException authEx:
+                    statusCode = HttpStatusCode.Unauthorized;
+                    errorResponse = new { message = authEx.Message };
+                    break;
+
+                case KeyNotFoundException:
+                    statusCode = HttpStatusCode.NotFound;
+                    errorResponse = new { message = "The requested resource was not found." };
+                    break;
+
+                case InvalidOperationException invEx:
+                    statusCode = HttpStatusCode.Conflict;
+                    errorResponse = new { message = invEx.Message };
+                    break;
+
+                default:
+                    if (exception.Message.Contains("Registration failed"))
+                    {
+                        statusCode = HttpStatusCode.BadRequest;
+                        errorResponse = new { message = exception.Message };
+                    }
+                    break;
             }
 
             context.Response.StatusCode = (int)statusCode;
 
-            return context.Response.WriteAsync(
-                JsonSerializer.Serialize(
-                    errorResponse, 
-                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            return context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, options));
         }
     }
 }

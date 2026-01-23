@@ -21,6 +21,22 @@ namespace ExpenseTracker.Application.Services
 
         public async Task<int> AddExpenseAsync(CreateExpenseDto dto)
         {
+            var userId = GetCurrentUserId();
+
+            // Prevent duplicate entries (same amount, description, and category within 10 seconds)
+            var tenSecondsAgo = DateTimeOffset.UtcNow.AddSeconds(-10);
+            var isDuplicate = await _context.Expenses.AnyAsync(e =>
+                e.UserId == userId &&
+                e.Amount == dto.Amount &&
+                e.Description == dto.Description &&
+                e.CategoryId == dto.CategoryId &&
+                e.Date >= tenSecondsAgo);
+
+            if (isDuplicate)
+            {
+                throw new InvalidOperationException("A duplicate expense was detected. Please wait a moment.");
+            }
+
             var expense = new Expense
             {
                 Description = dto.Description,
@@ -87,7 +103,7 @@ namespace ExpenseTracker.Application.Services
 
             expense.Description = dto.Description;
             expense.Amount = dto.Amount;
-            expense.Date = dto.Date;
+            expense.Date = dto.Date.ToUniversalTime();
             expense.CategoryId = dto.CategoryId;
 
             await _context.SaveChangesAsync();
@@ -124,10 +140,11 @@ namespace ExpenseTracker.Application.Services
 
             // Group by Category
             var categoryData = await query
-                .GroupBy(e => e.Category.Name)
+                .GroupBy(e => new { e.Category.Id, e.Category.Name })
                 .Select(g => new CategorySummaryDto
                 {
-                    CategoryName = g.Key,
+                    CategoryId = g.Key.Id, // Now you can populate this!
+                    CategoryName = g.Key.Name,
                     Amount = g.Sum(e => e.Amount),
                     Percentage = totalAmount > 0
                         ? (double)Math.Round(g.Sum(e => e.Amount) / totalAmount * 100, 2)
