@@ -38,9 +38,15 @@ namespace ExpenseTracker.API.Controllers
 
         // GET api/expenses
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ExpenseDto>>> GetExpenses()
+        public async Task<ActionResult<PagedResponse<ExpenseDto>>> GetExpenses(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
         {
-            return Ok(await _expenseService.GetAllExpensesAsync());
+            // Prevent huge requests by capping pageSize
+            if (pageSize > 50) pageSize = 50;
+
+            var result = await _expenseService.GetPagedExpensesAsync(pageNumber, pageSize);
+            return Ok(result);
         }
 
         // GET api/expenses/5

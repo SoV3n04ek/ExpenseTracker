@@ -51,13 +51,24 @@ namespace ExpenseTracker.Application.Services
             return expense.Id;
         }
 
-        public async Task<IEnumerable<ExpenseDto>> GetAllExpensesAsync()
+        // Inside ExpenseService.cs
+        public async Task<PagedResponse<ExpenseDto>> GetPagedExpensesAsync(int pageNumber, int pageSize)
         {
-            var currentUserId = GetCurrentUserId();
+            var userId = GetCurrentUserId();
 
-            return await _context.Expenses
+            // 1. Create the base query
+            var query = _context.Expenses
                 .Include(e => e.Category)
-                .Where(e => e.UserId == currentUserId)
+                .Where(e => e.UserId == userId)
+                .OrderByDescending(e => e.Date); // Always sort for consistent pagination
+
+            // 2. Count total items (for metadata)
+            var totalCount = await query.CountAsync();
+
+            // 3. Apply Pagination
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(e => new ExpenseDto(
                     e.Id,
                     e.Description,
@@ -66,6 +77,8 @@ namespace ExpenseTracker.Application.Services
                     e.Category.Name
                 ))
                 .ToListAsync();
+
+            return new PagedResponse<ExpenseDto>(items, totalCount, pageNumber, pageSize);
         }
 
         public async Task<ExpenseDto> GetExpenseByIdAsync(int id)
