@@ -19,9 +19,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/confirm-email/confirm-email.component').then(m => m.ConfirmEmailComponent)
   },
   {
-    path: 'dashboard',
-    canActivate: [authGuard], // <--- The Guard protects this!
-    loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+    path: '',
+    canActivate: [authGuard],
+    loadComponent: () => import('./shared/components/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+      },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+    ]
   },
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+  { path: '**', redirectTo: 'dashboard' }
 ];

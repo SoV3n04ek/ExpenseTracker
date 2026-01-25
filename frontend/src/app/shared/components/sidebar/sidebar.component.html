@@ -1,7 +1,12 @@
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-icon"></div>
-    Tracker
+<aside class="sidebar" [class.collapsed]="uiStore.isSidebarCollapsed()">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <div class="logo-icon"></div>
+      <span class="logo-text">Tracker</span>
+    </div>
+    <button class="toggle-btn" (click)="uiStore.toggleSidebar()">
+      <span>{{ uiStore.isSidebarCollapsed() ? '➡️' : '⬅️' }}</span>
+    </button>
   </div>
 
   <nav class="sidebar-nav">

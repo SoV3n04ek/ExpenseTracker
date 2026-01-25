@@ -1,0 +1,32 @@
+.expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row mat-form-field {
+    flex: 1;
+}
+
+mat-form-field {
+    width: 100%;
+}
+
+.error-message {
+    color: var(--error-color, #ba1a1a);
+    font-size: 0.875rem;
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: var(--error-container, #ffdad6);
+}
+
+h2 {
+    margin-bottom: 0;
+}

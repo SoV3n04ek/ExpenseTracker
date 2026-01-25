@@ -1,0 +1,11 @@
+<div class="layout-wrapper" [class.sidebar-collapsed]="uiStore.isSidebarCollapsed()"
+    [class.mobile-menu-open]="uiStore.isMobileMenuOpen()">
+
+    <app-sidebar></app-sidebar>
+
+    <div class="mobile-overlay" (click)="uiStore.closeMobileMenu()"></div>
+
+    <main class="main-content">
+        <router-outlet></router-outlet>
+    </main>
+</div>

@@ -1,6 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router'; // Required for routerLink
 import { AuthStore } from '../../../core/store/auth.store';
+import { UIStore } from '../../../core/store/ui.store';
 
 @Component({
   selector: 'app-sidebar',
@@ -11,6 +12,7 @@ import { AuthStore } from '../../../core/store/auth.store';
 })
 export class SidebarComponent {
   private readonly store = inject(AuthStore);
+  readonly uiStore = inject(UIStore);
 
   logout() {
     this.store.logout();

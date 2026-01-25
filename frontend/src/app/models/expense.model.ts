@@ -19,7 +19,23 @@ export interface ExpenseSummaryDto {
 }
 
 export interface CategorySummaryDto {
+  categoryId: number;
   categoryName: string;
   amount: number;
   percentage: number;
+}
+
+export interface CategoryDto {
+  id: number;
+  name: string;
+}
+
+export interface PagedResponse<T> {
+  items: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  totalCount: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
 }

@@ -137,6 +137,10 @@ body {
 }
 
 /* 5. Layout Utilities */
+:root {
+  --sidebar-width: 250px;
+}
+
 .flex {
   display: flex;
 }
@@ -193,10 +197,6 @@ body {
   margin-bottom: 2rem;
 }
 
-.ml-64 {
-  margin-left: 16rem;
-}
-
 .font-bold {
   font-weight: 700;
 }
@@ -227,18 +227,30 @@ body {
 
 /* 6. Sidebar Specific */
 .sidebar {
-  width: 16rem;
+  width: var(--sidebar-width);
   height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
   background: #0f172a;
-  /* Dark Slate for Sidebar */
   color: white;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1rem;
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  --sidebar-width: 80px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  padding: 0 0.5rem;
 }
 
 .sidebar-logo {
@@ -247,14 +259,34 @@ body {
   gap: 0.75rem;
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 2.5rem;
+}
+
+.collapsed .logo-text {
+  display: none;
 }
 
 .logo-icon {
   width: 2rem;
   height: 2rem;
+  min-width: 2rem;
   background: var(--primary-color);
   border-radius: 0.5rem;
+}
+
+.toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-nav {
@@ -272,6 +304,11 @@ body {
   font-weight: 500;
   margin-bottom: 0.5rem;
   transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.collapsed .sidebar-link span:last-child {
+  display: none;
 }
 
 .sidebar-link:hover {
@@ -302,8 +339,30 @@ body {
   gap: 0.75rem;
   border-radius: 0.5rem;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.collapsed .logout-btn span:last-child {
+  display: none;
 }
 
 .logout-btn:hover {
   background: rgba(239, 68, 68, 0.1);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    transition: left 0.3s ease;
+  }
+
+  .mobile-menu-open .sidebar {
+    left: 0;
+  }
+
+  .toggle-btn {
+    display: none;
+  }
 }
