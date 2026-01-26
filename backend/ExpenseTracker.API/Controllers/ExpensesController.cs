@@ -89,7 +89,21 @@ namespace ExpenseTracker.API.Controllers
             var start = startDate ?? DateTimeOffset.UtcNow.AddDays(-30);
             var end = endDate ?? DateTimeOffset.UtcNow;
 
+            if (start > end)
+            {
+                var ex = new Application.Exceptions.ValidationException("Invalid date range");
+                ex.Errors.Add("DateRange", new[] { "Start date must be before end date" });
+                throw ex;
+            }
+
             return Ok(await _expenseService.GetSummaryAsync(start, end));
+        }
+
+        // GET /categories
+        [HttpGet("categories")]
+        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
+        {
+            return Ok(await _expenseService.GetCategoriesAsync());
         }
     }
 }

@@ -31,7 +31,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
     options.SignIn.RequireConfirmedEmail = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders(); // Good practice to add this for password resets later
+.AddDefaultTokenProviders();
 
 // 3. Authentication (JWT)
 builder.Services.AddAuthentication(options =>
@@ -62,7 +62,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateExpenseDtoValidator>();
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ExpenseTracker.API.Filters.ValidateUserFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
 
 // Cors
