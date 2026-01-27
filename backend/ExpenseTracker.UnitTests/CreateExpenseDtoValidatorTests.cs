@@ -85,5 +85,33 @@ namespace ExpenseTracker.UnitTests
             result.ShouldHaveValidationErrorFor(x => x.Description)
                   .WithErrorMessage("Description cannot exceed 100 characters.");
         }
+
+        [Fact]
+        public void Validator_ShouldHaveError_WhenDescriptionIsJustWhitespace()
+        {
+            // Arrange
+            var model = new CreateExpenseDto("   ", 10.5m, DateTimeOffset.UtcNow, 1);
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldHaveValidationErrorFor(x => x.Description)
+                  .WithErrorMessage("Description cannot be whitespace only");
+        }
+
+        [Fact]
+        public void Validator_ShouldHaveError_WhenDateIsTooFarInFuture()
+        {
+            // Arrange
+            var model = new CreateExpenseDto("Description", 10.5m, DateTimeOffset.UtcNow.AddYears(100), 1);
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldHaveValidationErrorFor(x => x.Date)
+                  .WithErrorMessage("Date cannot be in the future");
+        }
     }
 }

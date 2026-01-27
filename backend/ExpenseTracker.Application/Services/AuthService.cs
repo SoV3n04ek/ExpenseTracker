@@ -91,6 +91,11 @@ namespace ExpenseTracker.Application.Services
                 throw new UnauthorizedAccessException("Invalid email or password");
             }
 
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                throw new UnauthorizedAccessException("User is locked out");
+            }
+
             if (!await _userManager.IsEmailConfirmedAsync(user))
             {
                 throw new UnauthorizedAccessException("You must confirm your email before logging in.");

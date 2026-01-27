@@ -90,5 +90,12 @@ namespace ExpenseTracker.UnitTests
             Assert.Equal(0, result.TotalAmount);
             Assert.Empty(result.Categories);
         }
+
+        [Fact]
+        public async Task DeleteExpense_WhenExpenseDoesNotExist_ThrowsKeyNotFoundException()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.DeleteExpenseAsync(999));
+        }
     }
 }

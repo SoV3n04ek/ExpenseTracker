@@ -10,88 +10,98 @@ using Respawn;
 using System.Data.Common;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Xunit;
 
-namespace ExpenseTracker.IntegrationTests;
-
-public class BaseIntegrationTest : IClassFixture<WebApplicationFactory<Program>>, IAsyncLifetime
+namespace ExpenseTracker.IntegrationTests
 {
-    protected readonly HttpClient Client;
-    protected readonly WebApplicationFactory<Program> Factory;
-    private Respawner _respawner = default!;
-    private DbConnection _connection = default!;
-
-    public BaseIntegrationTest(WebApplicationFactory<Program> factory)
+    // This tells XUnit to provide the WebApplicationFactory to this class
+    public abstract class BaseIntegrationTest : IClassFixture<CustomWebApplicationFactory<Program>>, IAsyncLifetime
     {
-        Factory = factory;
-        Client = factory.CreateClient();
-    }
+        protected readonly HttpClient Client;
+        protected readonly CustomWebApplicationFactory<Program> Factory;
+        private Respawner _respawner = default!;
+        private DbConnection _connection = default!;
 
-    public async Task InitializeAsync()
-    {
-        using var scope = Factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-        // Ensure database is created once
-        await db.Database.EnsureCreatedAsync();
-
-        var configuration = Factory.Services.GetRequiredService<IConfiguration>();
-        _connection = new NpgsqlConnection(configuration.GetConnectionString("DefaultConnection"));
-        await _connection.OpenAsync();
-
-        _respawner = await Respawner.CreateAsync(_connection, new RespawnerOptions
+        // This constructor is now compatible with inheritance
+        protected BaseIntegrationTest(CustomWebApplicationFactory<Program> factory)
         {
-            DbAdapter = DbAdapter.Postgres,
-            SchemasToInclude = new[] { "public" },
-            TablesToIgnore = new[]
+            Factory = factory;
+            Client = factory.CreateClient();
+        }
+
+        public async Task InitializeAsync()
+        {
+            using var scope = Factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await db.Database.EnsureCreatedAsync();
+
+            var configuration = Factory.Services.GetRequiredService<IConfiguration>();
+            _connection = new NpgsqlConnection(configuration.GetConnectionString("DefaultConnection"));
+            await _connection.OpenAsync();
+
+            _respawner = await Respawner.CreateAsync(_connection, new RespawnerOptions
             {
-                new Respawn.Graph.Table("__EFMigrationsHistory"),
-                new Respawn.Graph.Table("Categories") // Keep seeded categories
+                DbAdapter = DbAdapter.Postgres,
+                SchemasToInclude = new[] { "public" },
+                TablesToIgnore = new[]
+                {
+                    new Respawn.Graph.Table("__EFMigrationsHistory"),
+                    new Respawn.Graph.Table("Categories")
+                }
+            });
+
+            await _respawner.ResetAsync(_connection);
+        }
+
+        public async Task DisposeAsync()
+        {
+            if (_connection != null)
+            {
+                await _connection.CloseAsync();
+                await _connection.DisposeAsync();
             }
-        });
-
-        await _respawner.ResetAsync(_connection);
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (_connection != null)
-        {
-            await _connection.CloseAsync();
-            await _connection.DisposeAsync();
         }
-    }
 
-    protected void Authenticate(string token)
-    {
-        Client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
-    }
-
-    protected async Task ConfirmUserEmailAsync(string email)
-    {
-        using var scope = Factory.Services.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var user = await userManager.FindByEmailAsync(email);
-        if (user != null)
+        protected void Authenticate(string token)
         {
-            var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
-            await userManager.ConfirmEmailAsync(user, token);
+            Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
-    }
 
-    protected async Task<string> RegisterAndLoginAsync(string email, string password, string name = "Test User")
-    {
-        var registerDto = new { Name = name, Email = email, Password = password, ConfirmPassword = password };
-        await Client.PostAsJsonAsync("/api/auth/register", registerDto);
+        protected async Task<string> RegisterAndLoginAsync(string email, string password, string name = "Test User")
+        {
+            var registerDto = new RegisterDto { Name = name, Email = email, Password = password, ConfirmPassword = password };
+            var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", registerDto);
+            registerResponse.EnsureSuccessStatusCode();
 
-        await ConfirmUserEmailAsync(email);
+            // Manual confirmation logic with robust retrieval
+            using (var scope = Factory.Services.CreateScope())
+            {
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+                
+                ApplicationUser? user = null;
+                int retryCount = 0;
+                while (user == null && retryCount < 3)
+                {
+                    user = await userManager.FindByEmailAsync(email);
+                    if (user == null)
+                    {
+                        await Task.Delay(100);
+                        retryCount++;
+                    }
+                }
 
-        var loginDto = new { Email = email, Password = password };
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginDto);
-        var authData = await loginResponse.Content.ReadFromJsonAsync<AuthResponseDto>();
+                Assert.True(user != null, "User registration failed to persist in the database.");
+                
+                var token = await userManager.GenerateEmailConfirmationTokenAsync(user!);
+                await userManager.ConfirmEmailAsync(user!, token);
+            }
 
-        Authenticate(authData!.Token);
+            var loginDto = new { Email = email, Password = password };
+            var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginDto);
+            var authData = await loginResponse.Content.ReadFromJsonAsync<AuthResponseDto>();
 
-        return authData.Token;
+            Authenticate(authData!.Token);
+            return authData.Token;
+        }
     }
 }

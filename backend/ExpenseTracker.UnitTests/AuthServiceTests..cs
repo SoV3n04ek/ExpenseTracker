@@ -8,6 +8,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
+using FluentAssertions;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace ExpenseTracker.UnitTests.Services;
 
@@ -212,5 +215,49 @@ public class AuthServiceTests
         // Assert
         Assert.Contains("uncorfimed", result.Message); // Verifying our custom logic message
         _mockEmailService.Verify(x => x.SendEmailAsync(dto.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GenerateAuthResponse_ContainsCorrectClaims()
+    {
+        // Arrange
+        var user = new ApplicationUser 
+        { 
+            Id = 123, 
+            Email = "claims@test.com", 
+            Name = "Claims User" 
+        };
+        var loginDto = new LoginDto { Email = user.Email, Password = "Password123!" };
+
+        _mockUserMgr.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+        _mockUserMgr.Setup(x => x.CheckPasswordAsync(user, loginDto.Password)).ReturnsAsync(true);
+        _mockUserMgr.Setup(x => x.IsEmailConfirmedAsync(user)).ReturnsAsync(true);
+
+        // Act
+        var result = await _authService.LoginAsync(loginDto);
+
+        // Assert
+        var handler = new JwtSecurityTokenHandler();
+        var token = handler.ReadJwtToken(result.Token);
+
+        token.Claims.Should().Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == "123");
+        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Email && c.Value == "claims@test.com");
+        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Name && c.Value == "Claims User");
+    }
+
+    [Fact]
+    public async Task LoginAsync_WhenUserIsLockedOut_ThrowsUnauthorizedException()
+    {
+        // Arrange
+        var user = new ApplicationUser { Email = "locked@test.com" };
+        var loginDto = new LoginDto { Email = "locked@test.com", Password = "Password123!" };
+
+        _mockUserMgr.Setup(x => x.FindByEmailAsync(loginDto.Email)).ReturnsAsync(user);
+        _mockUserMgr.Setup(x => x.CheckPasswordAsync(user, loginDto.Password)).ReturnsAsync(true);
+        _mockUserMgr.Setup(x => x.IsLockedOutAsync(user)).ReturnsAsync(true);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(loginDto));
+        ex.Message.Should().Contain("locked out");
     }
 }

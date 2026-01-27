@@ -6,22 +6,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseTracker.Application.Services
 {
-    public class ExpenseService : IExpenseService
+    public class ExpenseService : BaseService, IExpenseService
     {
         private readonly ApplicationDbContext _context;
-        private readonly ICurrentUserService _currentUserService;
 
-        public ExpenseService(ApplicationDbContext context, ICurrentUserService currentUserService)
+        public ExpenseService(ApplicationDbContext context, ICurrentUserService currentUserService) 
+            : base(currentUserService)
         {
             _context = context;
-            _currentUserService = currentUserService;
         }
-
-        private int GetCurrentUserId() => int.Parse(_currentUserService.UserId ?? "0");
 
         public async Task<int> AddExpenseAsync(CreateExpenseDto dto)
         {
-            var userId = GetCurrentUserId();
+            var userId = CurrentUserId;
 
             // Prevent duplicate entries (same amount, description, and category within 10 seconds)
             var tenSecondsAgo = DateTimeOffset.UtcNow.AddSeconds(-10);
@@ -43,7 +40,7 @@ namespace ExpenseTracker.Application.Services
                 Amount = dto.Amount,
                 Date = dto.Date.ToUniversalTime(),
                 CategoryId = dto.CategoryId,
-                UserId = GetCurrentUserId()
+                UserId = CurrentUserId
             };
 
             _context.Expenses.Add(expense);
@@ -51,10 +48,9 @@ namespace ExpenseTracker.Application.Services
             return expense.Id;
         }
 
-        // Inside ExpenseService.cs
         public async Task<PagedResponse<ExpenseDto>> GetPagedExpensesAsync(int pageNumber, int pageSize)
         {
-            var userId = GetCurrentUserId();
+            var userId = CurrentUserId;
 
             // 1. Create the base query
             var query = _context.Expenses
@@ -83,7 +79,7 @@ namespace ExpenseTracker.Application.Services
 
         public async Task<ExpenseDto> GetExpenseByIdAsync(int id)
         {
-            var currentUserId = GetCurrentUserId();
+            var currentUserId = CurrentUserId;
 
             var expense = await _context.Expenses
                 .Include(e => e.Category)
@@ -105,7 +101,7 @@ namespace ExpenseTracker.Application.Services
 
         public async Task UpdateExpenseAsync(int id, CreateExpenseDto dto)
         {
-            var currentUser = GetCurrentUserId();
+            var currentUser = CurrentUserId;
             var expense = await _context.Expenses.FirstOrDefaultAsync(e => 
                 e.Id == id && e.UserId == currentUser);
 
@@ -123,7 +119,7 @@ namespace ExpenseTracker.Application.Services
         }
         public async Task DeleteExpenseAsync(int id)
         {
-            var currentUser = GetCurrentUserId();
+            var currentUser = CurrentUserId;
             //var expense = await _context.Expenses.FindAsync(id);
             var expense = await _context.Expenses.FirstOrDefaultAsync(e =>
                 e.Id == id && e.UserId == currentUser);
@@ -137,7 +133,7 @@ namespace ExpenseTracker.Application.Services
 
         public async Task<ExpenseSummaryDto> GetSummaryAsync(DateTimeOffset startDate, DateTimeOffset endDate)
         {
-            var userId = GetCurrentUserId();
+            var userId = CurrentUserId;
 
             // Filter expenses by User AND the specific Date range
             var startUtc = startDate.ToUniversalTime();
@@ -170,6 +166,14 @@ namespace ExpenseTracker.Application.Services
                 TotalAmount = totalAmount,
                 Categories = categoryData
             };
+        }
+
+        public async Task<IEnumerable<CategoryDto>> GetCategoriesAsync()
+        {
+            return await _context.Categories
+                .OrderBy(c => c.Name)
+                .Select(c => new CategoryDto(c.Id, c.Name))
+                .ToListAsync();
         }
     }
 }
