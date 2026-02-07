@@ -11,7 +11,7 @@ using System.Net.Http.Json;
 
 namespace ExpenseTracker.IntegrationTests
 {
-    public class ExpenseIntegrationTests : BaseIntegrationTest, IClassFixture<CustomWebApplicationFactory<Program>>
+    public class ExpenseIntegrationTests : BaseIntegrationTest
     {
         public ExpenseIntegrationTests(CustomWebApplicationFactory<Program> factory)
             : base(factory) { }

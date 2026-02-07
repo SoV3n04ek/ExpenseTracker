@@ -156,5 +156,39 @@ namespace ExpenseTracker.Application.Services
             var result = await _userManager.ConfirmEmailAsync(user, token);
             return result.Succeeded;
         }
+
+        public async Task ForgotPasswordAsync(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            
+            // Security Rule: If the user is null, return success immediately to prevent email enumeration
+            if (user == null) return;
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            
+            var encodedToken = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(
+                System.Text.Encoding.UTF8.GetBytes(token));
+            var encodedEmail = System.Net.WebUtility.UrlEncode(email);
+
+            // http://localhost:4200/reset-password?token={token}&email={email}
+            var resetLink = $"http://localhost:4200/reset-password?token={encodedToken}&email={encodedEmail}";
+
+            await _emailService.SendEmailAsync(email, "Reset your password",
+                $"Please reset your password by <a href='{resetLink}'>clicking here</a>.");
+        }
+
+        public async Task<IdentityResult> ResetPasswordAsync(ResetPasswordRequest dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "User not found" });
+            }
+
+            var decodedToken = System.Text.Encoding.UTF8.GetString(
+                Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlDecode(dto.Token));
+
+            return await _userManager.ResetPasswordAsync(user, decodedToken, dto.NewPassword);
+        }
     }
 }

@@ -7,6 +7,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { AddExpenseDialogComponent } from './components/add-expense-dialog/add-expense-dialog.component';
 import { ExpenseStore } from '../../core/store/expense.store';
+import { UIStore } from '../../core/store/ui.store';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,6 +20,7 @@ import { ExpenseStore } from '../../core/store/expense.store';
 export class DashboardComponent implements OnInit {
   readonly authStore = inject(AuthStore);
   readonly expenseStore = inject(ExpenseStore);
+  readonly uiStore = inject(UIStore);
   private readonly dialog = inject(MatDialog);
 
   ngOnInit(): void {

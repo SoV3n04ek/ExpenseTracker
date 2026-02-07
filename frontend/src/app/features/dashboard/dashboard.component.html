@@ -16,34 +16,8 @@
   </div>
   } @else {
   <div class="dashboard-grid">
-    <!-- Total Amount Card -->
-    <div class="card total-amount-card">
-      <h3>Total Expenses</h3>
-      <div class="amount">{{ expenseStore.summary()?.totalAmount | currency }}</div>
-    </div>
-
-    <!-- Categories Card -->
-    <div class="card categories-card">
-      <h3>Spending by Category</h3>
-      <div class="category-list">
-        @for (cat of expenseStore.summary()?.categories; track cat.categoryName) {
-        <div class="category-item">
-          <div class="category-info">
-            <span class="name">{{ cat.categoryName }}</span>
-            <span class="value">{{ cat.amount | currency }} ({{ cat.percentage }}%)</span>
-          </div>
-          <div class="progress-bg">
-            <div class="progress-bar" [style.width.%]="cat.percentage"></div>
-          </div>
-        </div>
-        } @empty {
-        <p class="empty-text">No summary data for the selected period.</p>
-        }
-      </div>
-    </div>
-
-    <!-- Recent Expenses Table -->
-    <div class="card expenses-table-card full-width">
+    <!-- Left Column: Table -->
+    <div class="card expenses-table-card">
       <div class="card-header">
         <h3>Recent Expenses</h3>
         <span>Total: {{ expenseStore.totalCount() }}</span>
@@ -65,7 +39,8 @@
               <td>{{ expense.description }}</td>
               <td><span class="category-tag">{{ expense.categoryName }}</span></td>
               <td>{{ expense.date | date:'mediumDate' }}</td>
-              <td class="text-right font-bold">{{ expense.amount | currency }}</td>
+              <td class="text-right font-bold">{{ expense.amount | currency: uiStore.currency() : 'symbol' : '1.2-2' }}
+              </td>
             </tr>
             } @empty {
             <tr>
@@ -87,6 +62,35 @@
         </button>
       </div>
       }
+    </div>
+
+    <!-- Right Column: Summary widgets -->
+    <div class="dashboard-side-column">
+      <div class="card total-amount-card">
+        <h3>Total Expenses</h3>
+        <div class="amount">{{ expenseStore.summary()?.totalAmount | currency: uiStore.currency() : 'symbol' : '1.2-2'
+          }}</div>
+      </div>
+
+      <div class="card categories-card">
+        <h3>Spending by Category</h3>
+        <div class="category-list">
+          @for (cat of expenseStore.summary()?.categories; track cat.categoryName) {
+          <div class="category-item">
+            <div class="category-info">
+              <span class="name">{{ cat.categoryName }}</span>
+              <span class="value">{{ cat.amount | currency: uiStore.currency() : 'symbol' : '1.2-2' }} ({{
+                cat.percentage }}%)</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-bar" [style.width.%]="cat.percentage"></div>
+            </div>
+          </div>
+          } @empty {
+          <p class="empty-text">No summary data for the selected period.</p>
+          }
+        </div>
+      </div>
     </div>
   </div>
   }

@@ -7,5 +7,7 @@ namespace ExpenseTracker.Application.Interfaces
         Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
         Task<AuthResponseDto> LoginAsync(LoginDto dto);
         Task<bool> ConfirmEmailAsync(int userId, string token);
+        Task ForgotPasswordAsync(string email);
+        Task<Microsoft.AspNetCore.Identity.IdentityResult> ResetPasswordAsync(ResetPasswordRequest dto);
     }
 }

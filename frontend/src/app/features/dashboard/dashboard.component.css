@@ -1,5 +1,9 @@
 .main-content-dashboard {
     padding: 2rem;
+    max-width: 1400px;
+    width: 95%;
+    margin: 0 auto;
+    --content-max-width: 1400px;
 }
 
 .dashboard-header {
@@ -22,8 +26,15 @@
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
-    gap: 1.5rem;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    align-items: start;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .add-expense-fab {
@@ -34,16 +45,17 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-.full-width {
-    grid-column: 1 / -1;
-}
-
 .card {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25), 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .card-header {
@@ -135,7 +147,7 @@
 
 .expenses-table th {
     text-align: left;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-color);
     color: var(--text-muted);
     font-weight: 500;
@@ -144,7 +156,7 @@
 }
 
 .expenses-table td {
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -191,6 +203,12 @@
     align-items: center;
     padding: 4rem;
     color: var(--text-muted);
+}
+
+.dashboard-side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
 .empty-text {

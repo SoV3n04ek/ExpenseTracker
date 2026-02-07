@@ -88,5 +88,23 @@ namespace ExpenseTracker.API.Controllers
 
             return Ok(new { message = "Confirmation email resent." });
         }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest dto)
+        {
+            await _authService.ForgotPasswordAsync(dto.Email);
+            return Ok(new { message = "If your email is in our system, a reset link has been sent." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest dto)
+        {
+            var result = await _authService.ResetPasswordAsync(dto);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+            }
+            return Ok(new { message = "Password has been reset successfully." });
+        }
     }
 }

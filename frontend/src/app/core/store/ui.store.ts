@@ -3,11 +3,13 @@ import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
 interface UIState {
     isSidebarCollapsed: boolean;
     isMobileMenuOpen: boolean;
+    currency: string;
 }
 
 const initialState: UIState = {
     isSidebarCollapsed: false,
     isMobileMenuOpen: false,
+    currency: 'USD',
 };
 
 export const UIStore = signalStore(
@@ -25,6 +27,9 @@ export const UIStore = signalStore(
         },
         setSidebarCollapsed(collapsed: boolean) {
             patchState(store, { isSidebarCollapsed: collapsed });
+        },
+        updateCurrency(currency: string) {
+            patchState(store, { currency });
         }
     }))
 );

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace ExpenseTracker.IntegrationTests
 {
-    public class ExpenseControllerTests : BaseIntegrationTest, IClassFixture<CustomWebApplicationFactory<Program>>
+    public class ExpenseControllerTests : BaseIntegrationTest
     {
         public ExpenseControllerTests(CustomWebApplicationFactory<Program> factory)
             : base(factory) { }
