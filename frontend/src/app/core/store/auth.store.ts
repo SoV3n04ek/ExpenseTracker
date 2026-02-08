@@ -1,7 +1,7 @@
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
 import { computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { AuthState, AuthResponseDto, LoginDto, RegisterDto } from '../../models/auth.model'; // Cleaned up
+import { AuthState, AuthResponseDto, LoginDto, RegisterDto, ResetPasswordRequest } from '../../models/auth.model'; // Cleaned up
 import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environment/environment';
@@ -154,6 +154,57 @@ export const AuthStore = signalStore(
       localStorage.removeItem('token');
       patchState(store, { user: null, status: 'idle', unconfirmedEmail: null });
       router.navigate(['/login']);
+    },
+
+    async resetPassword(data: ResetPasswordRequest) {
+      patchState(store, { isLoading: true, error: null, status: 'loading' });
+      try {
+        await firstValueFrom(
+          http.post(`${environment.apiUrl}/auth/reset-password`, data)
+        );
+        patchState(store, { isLoading: false, status: 'idle' });
+      } catch (err: any) {
+        let errorMessage: string | string[] = 'Password reset failed';
+
+        if (err.status === 400 && err.error?.errors) {
+          errorMessage = Object.values(err.error.errors).flat().join(' ');
+        } else {
+          errorMessage = err.error?.message || 'Password reset failed';
+        }
+
+        patchState(store, {
+          error: errorMessage,
+          isLoading: false,
+          status: 'error'
+        });
+        throw err;
+      }
+    },
+
+    async forgotPassword(email: string) {
+      patchState(store, { isLoading: true, error: null, status: 'loading' });
+      try {
+        await firstValueFrom(
+          http.post(`${environment.apiUrl}/auth/forgot-password`, { email })
+        );
+        patchState(store, { isLoading: false, status: 'idle' });
+      } catch (err: any) {
+        // For security, we only show errors for technical failures (500, 0, etc.)
+        // 4xx errors are treated as success from the UI perspective to prevent enumeration.
+        const isTechnicalError = err.status === 0 || err.status >= 500;
+
+        patchState(store, {
+          isLoading: false,
+          error: isTechnicalError ? (err.error?.message || 'Server error. Please try again later.') : null,
+          status: isTechnicalError ? 'error' : 'idle'
+        });
+
+        // Even on non-technical error, we want the component to transition to "submitted"
+        if (!isTechnicalError) {
+          return;
+        }
+        throw err;
+      }
     }
 
   })),

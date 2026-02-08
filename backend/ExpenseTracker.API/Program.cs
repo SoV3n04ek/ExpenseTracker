@@ -12,6 +12,10 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using ExpenseTracker.Application.Configuration;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Threading.RateLimiting;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -112,6 +116,42 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
+// Rate Limiting Configuration
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = (int)HttpStatusCode.TooManyRequests;
+    
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
+        
+        var response = new { message = "Too many attempts. Please try again in 60 seconds." };
+        await context.HttpContext.Response.WriteAsJsonAsync(response, token);
+    };
+
+    options.AddPolicy("AuthPolicy", context =>
+    {
+        var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
+    });
+});
+
+// Forwarded Headers for Proxy support (e.g. Nginx)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
 app.UseCustomExceptionHandler();
@@ -125,6 +165,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseForwardedHeaders();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization(); 

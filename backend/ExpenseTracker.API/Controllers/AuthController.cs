@@ -3,6 +3,7 @@ using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ExpenseTracker.API.Controllers
 {
@@ -26,6 +27,7 @@ namespace ExpenseTracker.API.Controllers
 
         // POST: api/auth/register
         [HttpPost("register")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
         {
             var response = await _authService.RegisterAsync(dto);
@@ -33,6 +35,7 @@ namespace ExpenseTracker.API.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
         {
             var response = await _authService.LoginAsync(dto);
@@ -90,6 +93,7 @@ namespace ExpenseTracker.API.Controllers
         }
 
         [HttpPost("forgot-password")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest dto)
         {
             await _authService.ForgotPasswordAsync(dto.Email);

@@ -161,7 +161,8 @@ namespace ExpenseTracker.Application.Services
         {
             var user = await _userManager.FindByEmailAsync(email);
             
-            // Security Rule: If the user is null, return success immediately to prevent email enumeration
+            // Security Rule: If the user is null, return immediately to prevent email enumeration.
+            // We return a "success" (Task.CompletedTask) to keep the API response identical.
             if (user == null) return;
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);

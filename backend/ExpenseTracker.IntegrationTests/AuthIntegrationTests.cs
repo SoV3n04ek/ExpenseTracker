@@ -74,5 +74,30 @@ namespace ExpenseTracker.IntegrationTests
             var newLoginResponse = await Client.PostAsJsonAsync("/api/auth/login", newLogin);
             newLoginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         }
+
+        [Fact]
+        public async Task ForgotPassword_RateLimit_Returns429AfterExceedingLimit()
+        {
+            // Arrange
+            var email = "ratelimit@test.com";
+            var forgotDto = new ForgotPasswordRequest { Email = email };
+
+            // Act & Assert
+            // We allow 5 requests per minute. The 6th should be rejected.
+            for (int i = 1; i <= 5; i++)
+            {
+                var response = await Client.PostAsJsonAsync("/api/auth/forgot-password", forgotDto);
+                response.StatusCode.Should().Be(HttpStatusCode.OK, $"Request {i} should be allowed");
+            }
+
+            // 6th request should return 429 Too Many Requests
+            var rateLimitedResponse = await Client.PostAsJsonAsync("/api/auth/forgot-password", forgotDto);
+            rateLimitedResponse.StatusCode.Should().Be(HttpStatusCode.TooManyRequests, "6th request should be rate limited");
+
+            // Verify the custom error message
+            var errorBody = await rateLimitedResponse.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+            errorBody.Should().ContainKey("message");
+            errorBody!["message"].Should().Be("Too many attempts. Please try again in 60 seconds.");
+        }
     }
 }
