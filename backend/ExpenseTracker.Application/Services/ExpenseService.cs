@@ -2,7 +2,9 @@
 using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Domain.Entities;
 using ExpenseTracker.Infrastructure.Persistence;
+using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
+using ValidationException = ExpenseTracker.Application.Exceptions.ValidationException;
 
 namespace ExpenseTracker.Application.Services
 {
@@ -19,6 +21,16 @@ namespace ExpenseTracker.Application.Services
         public async Task<int> AddExpenseAsync(CreateExpenseDto dto)
         {
             var userId = CurrentUserId;
+
+            // Manual check for category existence as we moved it from async validator
+            var categoryExists = await _context.Categories.AnyAsync(c => c.Id == dto.CategoryId);
+            if (!categoryExists)
+            {
+                throw new ValidationException(new List<ValidationFailure> 
+                { 
+                    new ValidationFailure("CategoryId", "The selected category does not exist") 
+                });
+            }
 
             // Prevent duplicate entries (same amount, description, and category within 10 seconds)
             var tenSecondsAgo = DateTimeOffset.UtcNow.AddSeconds(-10);

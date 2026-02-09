@@ -33,7 +33,12 @@ export class RegistrationComponent {
     registerForm = this.fb.nonNullable.group({
         name: ['', [Validators.required, Validators.maxLength(50)]],
         email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-        password: ['', [Validators.required, Validators.minLength(8)]],
+        password: ['', [
+            Validators.required,
+            Validators.minLength(8),
+            Validators.maxLength(64),
+            Validators.pattern(/^(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).*$/)
+        ]],
         confirmPassword: ['', [Validators.required]]
     }, { validators: passwordMatchValidator });
 

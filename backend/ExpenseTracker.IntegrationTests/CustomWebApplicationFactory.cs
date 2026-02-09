@@ -13,6 +13,12 @@ namespace ExpenseTracker.IntegrationTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.UseEnvironment("Testing");
+
+            // Use UseSetting for more direct overrides in minimal APIs
+            builder.UseSetting("RateLimit:PermitLimit", "10000");
+            builder.UseSetting("RateLimit:WindowMinutes", "1");
+
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IEmailService>();

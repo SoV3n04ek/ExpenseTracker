@@ -31,6 +31,10 @@ namespace ExpenseTracker.API.Controllers
         public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
         {
             var response = await _authService.RegisterAsync(dto);
+            if (response.Errors != null && response.Errors.Any())
+            {
+                return BadRequest(new { errors = response.Errors });
+            }
             return Ok(response);
         }
 

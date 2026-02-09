@@ -37,11 +37,15 @@ namespace ExpenseTracker.Application.Services
                     return new AuthResponseDto
                     {
                         Email = dto.Email,
-                        Message = "User already exists but email is uncorfimed. A new confirmation email has been sent."
+                        Message = "User already exists but email is unconfirmed. A new confirmation email has been sent."
                     };
                 }
 
-                throw new Exception("Registration failed: Email is already in use");
+                return new AuthResponseDto
+                {
+                    Email = dto.Email,
+                    Errors = new[] { "Registration failed: Email is already in use" }
+                };
             }
 
             // normal registration flow
@@ -55,8 +59,11 @@ namespace ExpenseTracker.Application.Services
 
             if (!result.Succeeded)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new Exception($"Registration failed: {errors}");
+                return new AuthResponseDto
+                {
+                    Email = dto.Email,
+                    Errors = result.Errors.Select(e => e.Description)
+                };
             }
 
             await SendConfirmationEmail(user);

@@ -4,6 +4,7 @@ using ExpenseTracker.Application.Services;
 using ExpenseTracker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
+using FluentValidation.AspNetCore;
 using ExpenseTracker.Application.Validators;
 using Microsoft.AspNetCore.Identity;
 using ExpenseTracker.Domain.Identity;
@@ -66,6 +67,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateExpenseDtoValidator>();
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ExpenseTracker.API.Filters.ValidateUserFilter>();
@@ -125,19 +127,33 @@ builder.Services.AddRateLimiter(options =>
     {
         context.HttpContext.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
         context.HttpContext.Response.ContentType = "application/json";
-        
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+        }
+
         var response = new { message = "Too many attempts. Please try again in 60 seconds." };
         await context.HttpContext.Response.WriteAsJsonAsync(response, token);
     };
 
     options.AddPolicy("AuthPolicy", context =>
     {
+        var config = context.RequestServices.GetRequiredService<IConfiguration>();
+        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+
+        // Default to a high limit in Testing environment
+        int defaultPermitLimit = env.IsEnvironment("Testing") ? 10000 : 5;
+        
+        var pLimit = config.GetValue<int>("RateLimit:PermitLimit", defaultPermitLimit);
+        var wMinutes = config.GetValue<int>("RateLimit:WindowMinutes", 1);
+        
         var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 5,
-            Window = TimeSpan.FromMinutes(1),
+            PermitLimit = pLimit,
+            Window = TimeSpan.FromMinutes(wMinutes),
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0
         });

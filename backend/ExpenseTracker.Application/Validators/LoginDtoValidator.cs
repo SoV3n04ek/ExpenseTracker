@@ -8,8 +8,8 @@ namespace ExpenseTracker.Application.Validators
         public LoginDtoValidator()
         {
             RuleFor(x => x.Email).NotEmpty().EmailAddress();
-            RuleFor(x => x.Email).NotEmpty().MaximumLength(50);
-            RuleFor(x => x.Password).NotEmpty().MinimumLength(8);
+            RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(100);
+            RuleFor(x => x.Password).NotEmpty().MinimumLength(8).MaximumLength(64);
         }
     }
 }

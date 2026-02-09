@@ -53,6 +53,7 @@ export class ResetPasswordComponent implements OnInit {
         newPassword: ['', [
             Validators.required,
             Validators.minLength(8),
+            Validators.maxLength(64),
             Validators.pattern(/^(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).*$/)
         ]],
         confirmPassword: ['', [Validators.required]]

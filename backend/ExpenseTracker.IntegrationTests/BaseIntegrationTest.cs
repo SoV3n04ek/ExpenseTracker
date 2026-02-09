@@ -1,4 +1,5 @@
-﻿using ExpenseTracker.Application.DTOs;
+﻿using Xunit;
+using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Domain.Identity;
 using ExpenseTracker.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -10,7 +11,8 @@ using Respawn;
 using System.Data.Common;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Xunit;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace ExpenseTracker.IntegrationTests
 {

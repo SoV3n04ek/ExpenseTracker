@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Json;
+using ExpenseTracker.IntegrationTests.Helpers;
 
 namespace ExpenseTracker.IntegrationTests
 {
@@ -20,10 +21,10 @@ namespace ExpenseTracker.IntegrationTests
         public async Task UserJourney_CanRegisterAndCreateExpense()
         {
             // Arrange
-            await RegisterAndLoginAsync("int@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
 
             // Act
-            var expenseDto = new CreateExpenseDto("Integration Test Expense", 10.5m, DateTimeOffset.UtcNow, 1);
+            var expenseDto = TestObjectFactory.GetCreateExpenseDto();
             var expenseResponse = await Client.PostAsJsonAsync("/api/expenses", expenseDto);
 
             // Assert 
@@ -34,14 +35,9 @@ namespace ExpenseTracker.IntegrationTests
         public async Task GetSummary_ReturnsValidJsonSchema()
         {
             // 1. Arrange - Setup a user AND some data
-            await RegisterAndLoginAsync("summary@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
 
-            var expenseDto = new CreateExpenseDto(
-                "Test Expense",
-                10m,
-                DateTimeOffset.UtcNow,
-                1
-            );
+            var expenseDto = TestObjectFactory.GetCreateExpenseDto();
             await Client.PostAsJsonAsync("/api/expenses", expenseDto);
 
             // 2. Act
@@ -58,13 +54,8 @@ namespace ExpenseTracker.IntegrationTests
         {
             // Arrange
             // 1. Login as User A and create an expense
-            await RegisterAndLoginAsync("userA@test.com", "Password123!", "User A");
-            var expenseDto = new CreateExpenseDto(
-                "User A Secret Expense",
-                100m,
-                DateTimeOffset.UtcNow,
-                1
-            );
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!", "User A");
+            var expenseDto = TestObjectFactory.GetCreateExpenseDto(TestObjectFactory.GetUniqueExpenseName("UserA"));
 
             var createResponse = await Client.PostAsJsonAsync("/api/expenses", expenseDto);
             // Use the Location header or deserialize to get the ID
@@ -72,7 +63,7 @@ namespace ExpenseTracker.IntegrationTests
             var expenseIdFromA = createdExpense!.Id;
 
             // 2. Now login as User B
-            await RegisterAndLoginAsync("userB@test.com", "Password123!", "User B");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!", "User B");
 
             // Act
             // User B tries to GET User A's expense
@@ -91,17 +82,20 @@ namespace ExpenseTracker.IntegrationTests
         public async Task GetSummary_WithDataRange_ReturnsOnlyExpensesWithinRange()
         {
             // 1. Arrange
-            await RegisterAndLoginAsync("range@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
 
             // Use specific UTC dates
             var dateInRange = new DateTimeOffset(2025, 1, 10, 0, 0, 0, TimeSpan.Zero);
             var dateOutOfRange = new DateTimeOffset(2024, 12, 1, 0, 0, 0, TimeSpan.Zero);
 
-            var inRange = new CreateExpenseDto("Inside", 50m, dateInRange, 1);
-            var outOfRange = new CreateExpenseDto("Outside", 1000m, dateOutOfRange, 1);
+            var inRange = TestObjectFactory.GetCreateExpenseDto("Inside", 50m, 1);
+            var inRangeWithDate = inRange with { Date = dateInRange };
+            
+            var outOfRange = TestObjectFactory.GetCreateExpenseDto("Outside", 1000m, 1);
+            var outOfRangeWithDate = outOfRange with { Date = dateOutOfRange };
 
-            await Client.PostAsJsonAsync("/api/expenses", inRange);
-            await Client.PostAsJsonAsync("/api/expenses", outOfRange);
+            await Client.PostAsJsonAsync("/api/expenses", inRangeWithDate);
+            await Client.PostAsJsonAsync("/api/expenses", outOfRangeWithDate);
 
             // 2. Act 
             // Format the dates as ISO strings so the Controller parses them correctly
@@ -119,7 +113,7 @@ namespace ExpenseTracker.IntegrationTests
         [Fact]
         public async Task GetSummary_EmptyData_ReturnsBaseKeys()
         {
-            await RegisterAndLoginAsync("empty@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
             var response = await Client.GetAsync("/api/expenses/summary");
             var json = await response.Content.ReadAsStringAsync();
 
@@ -131,15 +125,10 @@ namespace ExpenseTracker.IntegrationTests
         public async Task CreateExpense_InvalidData_Returns400BadRequest()
         {
             // Arrange
-            await RegisterAndLoginAsync("validation@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
 
             // Amount is negative, which violates our FluentValidation rule
-            var invalidExpense = new CreateExpenseDto(
-                "",
-                -5.0m,
-                DateTimeOffset.UtcNow,
-                1
-            );
+            var invalidExpense = TestObjectFactory.GetCreateExpenseDto("", -5.0m);
 
             // Act
             var response = await Client.PostAsJsonAsync("/api/expenses", invalidExpense);
@@ -156,36 +145,30 @@ namespace ExpenseTracker.IntegrationTests
         public async Task Login_WithWrongPassword_Returns401Unauthorized()
         {
             // Arrange
-            await RegisterAndLoginAsync("tester@test.com", "CorrectPassword123!");
-            var wrongLogin = new { Email = "tester@test.com", Password = "wrongPassword" };
+            var email = TestObjectFactory.GetUniqueEmail();
+            await RegisterAndLoginAsync(email, "CorrectPassword123!");
+            var wrongLogin = new { Email = email, Password = "wrongPassword" };
 
             // Act
             var response = await Client.PostAsJsonAsync("/api/auth/login", wrongLogin);
 
             // Assert 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-            var content = await response.Content.ReadFromJsonAsync<dynamic>();
-            // content.message should be "Invalid email or password"
         }
 
         [Fact]
         public async Task UpdateExpense_UserCannotUpdateOtherUsersExpense_ReturnsNotFound()
         {
             // 1. Arrange - User A creates an expense
-            await RegisterAndLoginAsync("userA_update@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
             // CreateExpenseDto
-            var originalExpense = new CreateExpenseDto(
-                "User A Original",
-                10m,
-                DateTimeOffset.UtcNow,
-                1
-            );
+            var originalExpense = TestObjectFactory.GetCreateExpenseDto(TestObjectFactory.GetUniqueExpenseName("UserAOriginal"), 10m);
             var createResponse = await Client.PostAsJsonAsync("/api/expenses", originalExpense);
             var created = await createResponse.Content.ReadFromJsonAsync<ExpenseDto>();
 
             // 2. Switch to User B
-            await RegisterAndLoginAsync("userB_hacker@test.com", "Password123!");
-            var updateDto = new CreateExpenseDto("Hacked By B", 999m, DateTimeOffset.UtcNow, 1);
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
+            var updateDto = TestObjectFactory.GetCreateExpenseDto("Hacked By B", 999m);
 
             // 3. Act - User B tries to update User A's expense ID
             var updateResponse = await Client.PutAsJsonAsync($"/api/expenses/{created!.Id}", updateDto);
@@ -229,14 +212,9 @@ namespace ExpenseTracker.IntegrationTests
         public async Task CreateExpense_WithNonExistentCategory_ReturnsBadRequest()
         {
             // Arrange
-            await RegisterAndLoginAsync("integrity@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
 
-            var expenseWithBadCategory = new CreateExpenseDto(
-                "Phantom Category Expense",
-                50.0m,
-                DateTimeOffset.UtcNow,
-                99999 // This ID should not exist 
-            );
+            var expenseWithBadCategory = TestObjectFactory.GetCreateExpenseDto("Phantom Category Expense", 50.0m, 99999);
 
             // Act
             var response = await Client.PostAsJsonAsync("/api/expenses", expenseWithBadCategory);
@@ -250,11 +228,12 @@ namespace ExpenseTracker.IntegrationTests
         public async Task UserJourney_HandleDoubleSubmitAndPreciseSummary()
         {
             // 1.  Arrange - register
-            await RegisterAndLoginAsync("precision@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
 
             // We use "odd" decimal numbers to test floating-point precision (decimal vs double)
-            var expense1 = new CreateExpenseDto("Item 1", 10.33m, DateTimeOffset.UtcNow, 1);
-            var expense2 = new CreateExpenseDto("Item 2", 20.67m, DateTimeOffset.UtcNow, 1);
+            var description = TestObjectFactory.GetUniqueExpenseName("Precision");
+            var expense1 = TestObjectFactory.GetCreateExpenseDto(description, 10.33m);
+            var expense2 = TestObjectFactory.GetCreateExpenseDto(TestObjectFactory.GetUniqueExpenseName("Precision2"), 20.67m);
             // 2. Act - Simulate a "Double submit"
             var response1 = await Client.PostAsJsonAsync("/api/expenses", expense1);
             await Task.Delay(100); // Small delay to ensure DB persistence for duplicate check
@@ -285,7 +264,7 @@ namespace ExpenseTracker.IntegrationTests
         public async Task GetSummary_WithInvalidDateRange_Returns400BadRequest()
         {
             // Arrange
-            await RegisterAndLoginAsync("invalidrange@test.com", "Password123!");
+            await RegisterAndLoginAsync(TestObjectFactory.GetUniqueEmail(), "Password123!");
             var startDate = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd");
             var endDate = DateTimeOffset.UtcNow.AddDays(-7).ToString("yyyy-MM-dd");
 

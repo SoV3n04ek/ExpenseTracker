@@ -1,10 +1,13 @@
-﻿namespace ExpenseTracker.Application.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ExpenseTracker.Application.DTOs
 {
-    public class RegisterDto
+    public record RegisterDto
     {
-        public string Name { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public string ConfirmPassword { get; set; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        public string Email { get; init; } = string.Empty;
+        [MaxLength(64)]
+        public string Password { get; init; } = string.Empty;
+        public string ConfirmPassword { get; init; } = string.Empty;
     }
 }

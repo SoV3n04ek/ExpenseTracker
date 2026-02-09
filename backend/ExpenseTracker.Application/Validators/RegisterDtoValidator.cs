@@ -1,4 +1,5 @@
-﻿using ExpenseTracker.Application.DTOs;
+﻿using ExpenseTracker.Application.Constants;
+using ExpenseTracker.Application.DTOs;
 using FluentValidation;
 
 namespace ExpenseTracker.Application.Validators
@@ -12,11 +13,15 @@ namespace ExpenseTracker.Application.Validators
                 .MaximumLength(50).WithMessage("Name cannot exceed 50 characters");
 
             RuleFor(x => x.Email)
-                .NotEmpty().EmailAddress()
+                .NotEmpty()
+                .EmailAddress()
                 .MaximumLength(100);
 
             RuleFor(x => x.Password)
-                .NotEmpty().MinimumLength(8);
+                .NotEmpty()
+                .MinimumLength(8)
+                .MaximumLength(64)
+                .Matches(AuthConstants.PasswordRegex).WithMessage(AuthConstants.PasswordRegexErrorMessage);
 
             RuleFor(x => x.ConfirmPassword)
                 .Equal(x => x.Password).WithMessage("Passwords do not match");
