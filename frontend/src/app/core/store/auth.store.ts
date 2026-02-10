@@ -45,12 +45,12 @@ export const AuthStore = signalStore(
             errorMessage = err.error.message;
             patchState(store, { unconfirmedEmail: credentials.email });
           } else {
-            errorMessage = 'Invalid credentials.';
+            errorMessage = err.error?.errors ? Object.values(err.error.errors).flat() as string[] : (err.error?.message || 'Invalid credentials.');
           }
         } else if (err.status === 403) {
           errorMessage = 'Invalid credentials.';
-        } else if (err.status === 400 && err.error?.errors) {
-          errorMessage = Object.values(err.error.errors).flat().join(' ');
+        } else if (err.status === 400) {
+          errorMessage = err.error?.errors ? Object.values(err.error.errors).flat() as string[] : (err.error?.message || 'Login failed');
         } else {
           errorMessage = err.error?.message || 'Login failed';
         }
@@ -77,8 +77,15 @@ export const AuthStore = signalStore(
 
         if (err.status === 0) {
           errorMessage = 'Backend server is offline. Please start the service.';
-        } else if (err.status === 400 && err.error?.errors) {
-          errorMessage = Object.values(err.error.errors).flat().join(' ');
+        } else if (err.status === 400 || err.status === 409) {
+          if (err.error?.errors) {
+            console.log('Backend Validation Errors:', err.error.errors);
+            errorMessage = Object.values(err.error.errors).flat() as string[];
+          } else if (err.error?.message) {
+            errorMessage = [err.error.message];
+          } else {
+            errorMessage = 'Registration failed';
+          }
         } else {
           errorMessage = err.error?.message || 'Registration failed';
         }
@@ -166,8 +173,8 @@ export const AuthStore = signalStore(
       } catch (err: any) {
         let errorMessage: string | string[] = 'Password reset failed';
 
-        if (err.status === 400 && err.error?.errors) {
-          errorMessage = Object.values(err.error.errors).flat().join(' ');
+        if (err.status === 400) {
+          errorMessage = err.error?.errors ? Object.values(err.error.errors).flat() as string[] : (err.error?.message || 'Password reset failed');
         } else {
           errorMessage = err.error?.message || 'Password reset failed';
         }

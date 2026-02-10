@@ -24,6 +24,66 @@
     margin: 0.5rem 0 0 0;
 }
 
+/* Modern Currency Selector */
+.currency-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.currency-modern-select {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 48px;
+    height: 48px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.currency-modern-select:hover {
+    background-color: var(--border-color);
+    transform: translateY(-1px);
+    border-color: var(--primary-color);
+}
+
+.currency-modern-select:active {
+    transform: translateY(0);
+}
+
+.chevron-icon {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    color: var(--text-muted);
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.currency-modern-select:hover+.chevron-icon {
+    color: var(--primary-color);
+    opacity: 1;
+}
+
+.currency-modern-select option {
+    background: var(--card-bg);
+    color: var(--text-main);
+    padding: 10px;
+}
+
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 350px;
@@ -215,4 +275,49 @@
     color: var(--text-muted);
     text-align: center;
     padding: 1rem;
+}
+
+.zero-state-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    margin-top: 1rem;
+}
+
+.zero-state-card h2 {
+    font-size: 2rem;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.zero-state-card p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 400px;
+    margin: 0;
+}
+
+.large-icon {
+    font-size: 80px !important;
+    width: 80px !important;
+    height: 80px !important;
+    color: var(--primary-color);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
+.py-12 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
 }

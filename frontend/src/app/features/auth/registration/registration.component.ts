@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { RouterModule } from '@angular/router';
 import { AuthStore } from '../../../core/store/auth.store';
+import { RegisterDto } from '../../../models/auth.model';
 import { passwordMatchValidator } from './password-match.validator';
 
 @Component({
@@ -31,7 +32,7 @@ export class RegistrationComponent {
     asArray(val: any): string[] { return val as string[]; }
 
     registerForm = this.fb.nonNullable.group({
-        name: ['', [Validators.required, Validators.maxLength(50)]],
+        name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
         email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
         password: ['', [
             Validators.required,
@@ -42,10 +43,40 @@ export class RegistrationComponent {
         confirmPassword: ['', [Validators.required]]
     }, { validators: passwordMatchValidator });
 
-    onSubmit() {
-        if (this.registerForm.valid) {
-            const { confirmPassword, ...registerDto } = this.registerForm.getRawValue();
-            this.store.register(registerDto);
+    getControlErrorMessage(controlName: string): string {
+        const control = this.registerForm.get(controlName);
+        if (!control || !control.touched) {
+            return '';
         }
+
+        if (control.errors?.['required']) return 'This field is required.';
+        if (control.errors?.['email']) return 'Please enter a valid email address.';
+        if (control.errors?.['minlength']) {
+            if (controlName === 'name') return 'Name must be at least 2 characters.';
+            return `Too short (min ${control.errors['minlength'].requiredLength} chars).`;
+        }
+        if (control.errors?.['maxlength']) return 'This field is too long.';
+        if (control.errors?.['pattern']) {
+            return 'Password must have 1 number and 1 special character (#!*).';
+        }
+
+        return '';
+    }
+
+    onSubmit() {
+        if (this.registerForm.invalid) {
+            this.registerForm.markAllAsTouched();
+            return;
+        }
+
+        const formValue = this.registerForm.getRawValue();
+        const request: RegisterDto = {
+            name: formValue.name,
+            email: formValue.email,
+            password: formValue.password,
+            confirmPassword: formValue.confirmPassword
+        };
+
+        this.store.register(request);
     }
 }

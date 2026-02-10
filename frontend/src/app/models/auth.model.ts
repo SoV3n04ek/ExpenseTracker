@@ -5,6 +5,7 @@ export interface AuthResponseDto {
   email: string;
   name: string;
   message?: string;
+  errors?: string[];
 }
 
 export interface LoginDto {
@@ -15,6 +16,7 @@ export interface LoginDto {
 export interface RegisterDto {
   email: string;
   password?: string;
+  confirmPassword?: string;
   name: string;
 }
 

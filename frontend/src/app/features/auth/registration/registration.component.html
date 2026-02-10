@@ -23,54 +23,44 @@
             <div class="mb-4">
                 <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Full Name</mat-label>
-                    <input matInput formControlName="name" placeholder="John Doe" maxlength="50">
-                    @if (registerForm.controls.name.touched && registerForm.controls.name.errors?.['required']) {
-                    <mat-error>Name is required</mat-error>
-                    }
-                    @if (registerForm.controls.name.touched && registerForm.controls.name.errors?.['maxlength']) {
-                    <mat-error>Name cannot exceed 50 characters</mat-error>
+                    <input matInput formControlName="name" placeholder="John Doe">
+                    @if (getControlErrorMessage('name')) {
+                    <mat-error>{{ getControlErrorMessage('name') }}</mat-error>
                     }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Email Address</mat-label>
-                    <input matInput formControlName="email" type="email" placeholder="name@example.com" maxlength="100">
-                    @if (registerForm.controls.email.touched && registerForm.controls.email.errors?.['required']) {
-                    <mat-error>Email is required</mat-error>
-                    }
-                    @if (registerForm.controls.email.touched && registerForm.controls.email.errors?.['email']) {
-                    <mat-error>Please enter a valid email</mat-error>
-                    }
-                    @if (registerForm.controls.email.touched && registerForm.controls.email.errors?.['maxlength']) {
-                    <mat-error>Email cannot exceed 100 characters</mat-error>
+                    <input matInput formControlName="email" type="email" placeholder="name@example.com">
+                    @if (getControlErrorMessage('email')) {
+                    <mat-error>{{ getControlErrorMessage('email') }}</mat-error>
                     }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Password</mat-label>
                     <input matInput formControlName="password" type="password">
-                    @if (registerForm.controls.password.touched && registerForm.controls.password.errors?.['required'])
-                    {
-                    <mat-error>Password is required</mat-error>
-                    }
-                    @if (registerForm.controls.password.touched && registerForm.controls.password.errors?.['minlength'])
-                    {
-                    <mat-error>Password must be at least 8 characters</mat-error>
+                    @if (getControlErrorMessage('password')) {
+                    <mat-error>{{ getControlErrorMessage('password') }}</mat-error>
                     }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Confirm Password</mat-label>
                     <input matInput formControlName="confirmPassword" type="password">
-                    @if ((registerForm.controls.confirmPassword.touched || registerForm.controls.confirmPassword.dirty)
-                    && registerForm.errors?.['passwordMismatch']) {
-                    <mat-error>Passwords do not match</mat-error>
+                    @if (getControlErrorMessage('confirmPassword')) {
+                    <mat-error>{{ getControlErrorMessage('confirmPassword') }}</mat-error>
                     }
                 </mat-form-field>
+
+                @if (registerForm.controls.confirmPassword.touched && registerForm.errors?.['passwordMismatch']) {
+                <div class="error-alert mt-2">
+                    <p class="mb-0">Passwords do not match.</p>
+                </div>
+                }
             </div>
 
-            <button mat-flat-button color="primary" type="submit" class="btn-primary"
-                [disabled]="registerForm.invalid || store.isLoading()">
+            <button mat-flat-button color="primary" type="submit" class="btn-primary" [disabled]="store.isLoading()">
                 @if (store.isLoading()) {
                 <span>Registering...</span>
                 } @else {
