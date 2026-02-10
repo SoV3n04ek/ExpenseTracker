@@ -3,6 +3,7 @@ using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration; // to read JWT secret
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;     // for security key
@@ -17,12 +18,18 @@ namespace ExpenseTracker.Application.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailService _emailService;
         private readonly JwtSettings _jwtSettings;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(UserManager<ApplicationUser> userManager, IOptions<JwtSettings> jwtOptions, IEmailService emailService)
+        public AuthService(
+            UserManager<ApplicationUser> userManager, 
+            IOptions<JwtSettings> jwtOptions, 
+            IEmailService emailService,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _jwtSettings = jwtOptions.Value;
             _emailService = emailService;
+            _configuration = configuration;
         }
 
         public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -82,7 +89,8 @@ namespace ExpenseTracker.Application.Services
                 System.Text.Encoding.UTF8.GetBytes(token));
 
             // Pointing to Frontend UI (ConfirmEmailComponent)
-            var confirmationLink = $"http://localhost:4200/confirm-email?userId={user.Id}&token={encodedToken}";
+            var baseUrl = _configuration.GetValue<string>("ClientSettings:BaseUrl") ?? "http://localhost:4200";
+            var confirmationLink = $"{baseUrl.TrimEnd('/')}/confirm-email?userId={user.Id}&token={encodedToken}";
 
             await _emailService.SendEmailAsync(user.Email!, "Confirm your email",
                 $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>.");
@@ -178,9 +186,10 @@ namespace ExpenseTracker.Application.Services
                 System.Text.Encoding.UTF8.GetBytes(token));
             var encodedEmail = System.Net.WebUtility.UrlEncode(email);
 
-            // http://localhost:4200/reset-password?token={token}&email={email}
-            var resetLink = $"http://localhost:4200/reset-password?token={encodedToken}&email={encodedEmail}";
-
+            // {BaseUrl}/reset-password?token={token}&email={email}
+            var baseUrl = _configuration.GetValue<string>("ClientSettings:BaseUrl") ?? "http://localhost:4200";
+            var resetLink = $"{baseUrl.TrimEnd('/')}/reset-password?token={encodedToken}&email={encodedEmail}";
+            Console.WriteLine($"\n\n[CONFIG CHECK] Frontend BaseUrl is: {baseUrl}\n\n");
             await _emailService.SendEmailAsync(email, "Reset your password",
                 $"Please reset your password by <a href='{resetLink}'>clicking here</a>.");
         }

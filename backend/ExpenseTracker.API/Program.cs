@@ -20,6 +20,8 @@ using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.AddConsole();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, b =>
@@ -170,19 +172,30 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 var app = builder.Build();
 
-app.UseCustomExceptionHandler();
+// Automatic Database Migrations
+if (builder.Configuration.GetValue<bool>("RUN_MIGRATIONS"))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
-app.UseCors("AngularDevPolicy");
+app.UseForwardedHeaders();
+
+app.UseCustomExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseCors("AngularDevPolicy");
+}
 
 app.UseHttpsRedirection();
-
-app.UseForwardedHeaders();
 app.UseRateLimiter();
 
 app.UseAuthentication();

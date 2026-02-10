@@ -2,17 +2,52 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:latest
+    image: postgres:16-alpine
+    container_name: expense-db
     restart: always
     environment:
       POSTGRES_USER: expense_user
       POSTGRES_PASSWORD: expense_password
       POSTGRES_DB: expense_tracker_db
-      PGPORT: 5432
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U expense_user -d expense_tracker_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  expense-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: expense-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RUN_MIGRATIONS=true
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=expense_tracker_db;Username=expense_user;Password=expense_password
+      - Jwt__Key=3e949be185f3cb3606b43391a649dd6af8b3c660daa5fae1a7d77ff27aeade95341964a1c1af6ceadf2c51bc683fecc24f57f2d27da0af9ab5dac14ea49c9980
+      - Jwt__Issuer=ExpenseTrackerIssuer
+      - Jwt__Audience=ExpenseTrackerClient
+      - ClientSettings__BaseUrl=http://localhost
+      - ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=false
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: expense-frontend
+    depends_on:
+      - expense-backend
+    ports:
+      - "80:80"
 
 volumes:
   postgres_data:
