@@ -37,6 +37,12 @@ namespace ExpenseTracker.API.Middleware
 
             switch (exception)
             {
+                case NotFoundException notFoundEx:
+                case KeyNotFoundException:
+                    statusCode = HttpStatusCode.NotFound;
+                    errorResponse = new { message = exception.Message };
+                    break;
+
                 case ValidationException valEx:
                     statusCode = HttpStatusCode.BadRequest;
                     errorResponse = new
@@ -50,11 +56,6 @@ namespace ExpenseTracker.API.Middleware
                 case UnauthorizedAccessException authEx:
                     statusCode = HttpStatusCode.Unauthorized;
                     errorResponse = new { message = authEx.Message };
-                    break;
-
-                case KeyNotFoundException:
-                    statusCode = HttpStatusCode.NotFound;
-                    errorResponse = new { message = "The requested resource was not found." };
                     break;
 
                 case InvalidOperationException invEx:

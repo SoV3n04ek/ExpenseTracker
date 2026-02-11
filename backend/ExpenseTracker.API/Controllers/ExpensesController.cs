@@ -3,6 +3,7 @@ using ExpenseTracker.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace ExpenseTracker.API.Controllers
 {
@@ -59,16 +60,12 @@ namespace ExpenseTracker.API.Controllers
 
         // PUT api/expenses/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateResult(int id, CreateExpenseDto dto)
+        public async Task<IActionResult> UpdateExpense(int id, UpdateExpenseDto dto)
         {
-            var validationResult = await _validator.ValidateAsync(dto);
+            var userId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            if (!validationResult.IsValid)
-            {
-                throw new Application.Exceptions.ValidationException(validationResult.Errors);
-            }
-
-            await _expenseService.UpdateExpenseAsync(id, dto);
+            await _expenseService.UpdateExpenseAsync(id, dto, userId);
             return NoContent(); // 204 No content is standard for successful updates
         }
 
@@ -76,7 +73,10 @@ namespace ExpenseTracker.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteExpense(int id)
         {
-            await _expenseService.DeleteExpenseAsync(id);
+            var userId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            await _expenseService.DeleteExpenseAsync(id, userId);
             return NoContent();
         }
 

@@ -3,6 +3,8 @@ using ExpenseTracker.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ExpenseTracker.Infrastructure.Persistence
 {
@@ -38,6 +40,24 @@ namespace ExpenseTracker.Infrastructure.Persistence
                 .WithMany(u => u.Expenses)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Soft Delete
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType).HasQueryFilter(GetIsDeletedFilterExpression(entityType.ClrType));
+                    modelBuilder.Entity(entityType.ClrType).HasIndex(nameof(ISoftDeletable.IsDeleted));
+                }
+            }
+        }
+
+        private static LambdaExpression GetIsDeletedFilterExpression(Type type)
+        {
+            var parameter = Expression.Parameter(type, "it");
+            var property = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
+            var condition = Expression.Equal(property, Expression.Constant(false));
+            return Expression.Lambda(condition, parameter);
         }
     }
 }
