@@ -95,7 +95,7 @@ namespace ExpenseTracker.UnitTests
         public async Task DeleteExpense_WhenExpenseDoesNotExist_ThrowsKeyNotFoundException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.DeleteExpenseAsync(999));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.DeleteExpenseAsync(999, "test-user-id"));
         }
     }
 }
