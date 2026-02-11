@@ -39,3 +39,9 @@ export interface PagedResponse<T> {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
 }
+
+export interface UpdateExpenseDto {
+  description: string;
+  amount: number;
+  date: string;
+}

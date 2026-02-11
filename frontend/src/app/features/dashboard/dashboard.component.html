@@ -55,16 +55,27 @@
               <th>Category</th>
               <th>Date</th>
               <th class="text-right">Amount</th>
+              <th class="text-right actions-col">Actions</th>
             </tr>
           </thead>
           <tbody>
             @for (expense of expenseStore.expenses(); track expense.id) {
-            <tr [class.optimistic]="expense.id < 0">
+            <tr class="expense-row" [class.optimistic]="expense.id < 0" @rowAnimation>
               <td>{{ expense.description }}</td>
               <td><span class="category-tag">{{ expense.categoryName }}</span></td>
               <td>{{ expense.date | date:'mediumDate' }}</td>
               <td class="text-right font-bold">{{ expense.amount | currency: uiStore.selectedCurrency() : 'symbol' :
                 '1.2-2' }}
+              </td>
+              <td class="text-right actions-cell">
+                <div class="flex justify-end gap-1">
+                  <button mat-icon-button color="primary" (click)="openEditExpenseDialog(expense)" title="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="onDeleteExpense(expense.id)" title="Delete">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
               </td>
             </tr>
             }
