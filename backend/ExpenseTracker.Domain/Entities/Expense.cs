@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ExpenseTracker.Domain.Entities
 {
-    public class Expense
+    public class Expense : ISoftDeletable
     {
         public int Id { get; set; }
 
@@ -16,5 +16,8 @@ namespace ExpenseTracker.Domain.Entities
        
         public int UserId { get; set; }
         public ApplicationUser User { get; set; } = null!;
+
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAtUtc { get; set; }
     }
 }
