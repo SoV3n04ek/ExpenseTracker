@@ -1,9 +1,9 @@
 .main-content-dashboard {
     padding: 2rem;
-    max-width: 1400px;
-    width: 95%;
+    max-width: 110rem;
+    /* 1280px / max-w-7xl */
+    width: 98%;
     margin: 0 auto;
-    --content-max-width: 1400px;
 }
 
 .dashboard-header {
@@ -86,7 +86,9 @@
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 350px;
+    /* Breakthrough: minmax(0, ...) breaks the implicit min-content trap */
+    /* Table gets 75% flex, Sidebar is 25% flex but min 300px */
+    grid-template-columns: minmax(0, 3fr) minmax(300px, 1fr);
     gap: 2rem;
     align-items: start;
 }
@@ -198,6 +200,9 @@
 
 .table-container {
     overflow-x: auto;
+    width: 100%;
+    /* display: block ensures the container doesn't inherit table's intrinsic sizing behaviors */
+    display: block;
 }
 
 .expenses-table {
@@ -218,6 +223,21 @@
 .expenses-table td {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-color);
+
+}
+
+td {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.expenses-table th.actions-col,
+.expenses-table td.actions-cell {
+    width: 1%;
+    white-space: nowrap;
+    padding-right: 1.5rem;
+    /* Insurance for spacing */
 }
 
 .expenses-table tr:last-child td {
@@ -275,6 +295,39 @@
     color: var(--text-muted);
     text-align: center;
     padding: 1rem;
+}
+
+.dashboard-container {
+    max-width: 80rem;
+    /* 1280px / max-w-7xl */
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.expenses-table-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    overflow: hidden;
+    margin-top: 2rem;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.expenses-table-card table {
+    width: 100%;
+    table-layout: auto;
+    min-width: 100%;
+}
+
+tr.expense-row {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+tr.expense-row.removing {
+    opacity: 0;
+    transform: translateX(20px);
 }
 
 .zero-state-card {
