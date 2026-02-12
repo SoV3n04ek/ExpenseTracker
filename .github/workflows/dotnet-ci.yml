@@ -19,10 +19,10 @@ jobs:
         dotnet-version: 9.0.x
     
     - name: Restore dependencies
-      run: dotnet restore backend/ExpenseTracker.sln
+      run: dotnet restore backend/ExpenseTracker.API/ExpenseTracker.API.sln
     
     - name: Build
-      run: dotnet build backend/ExpenseTracker.sln --no-restore
+      run: dotnet build backend/ExpenseTracker.API/ExpenseTracker.API.sln --no-restore
     
     - name: Test
-      run: dotnet test backend/ExpenseTracker.sln --no-build --verbosity normal
+      run: dotnet test backend/ExpenseTracker.API/ExpenseTracker.API.sln --no-build --verbosity normal
