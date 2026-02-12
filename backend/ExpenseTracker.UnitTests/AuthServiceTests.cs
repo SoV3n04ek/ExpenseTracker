@@ -25,6 +25,9 @@ public class AuthServiceTests
         _mockUserMgr = MockHelpers.MockUserManager<ApplicationUser>();
         _mockEmailService = new Mock<IEmailService>();
 
+        var mockConfig = new Mock<IConfiguration>();
+        mockConfig.Setup(c => c["ClientSettings:BaseUrl"]).Returns("http://localhost:4200");
+
         // 1. Create a real instance of your settings class
         var jwtSettings = new JwtSettings
         {
@@ -36,16 +39,12 @@ public class AuthServiceTests
 
         // 2. Use Options.Create to wrap your settings
         var options = Options.Create(jwtSettings);
-        var mockConfig = new Mock<IConfiguration>();
-        mockConfig.Setup(c => c["ClientSettings:BaseUrl"]).Returns("http://localhost:4200");
-
+        
         // 3. Pass the options to the service
-        _authService = new AuthService(
-            _mockUserMgr.Object, 
-            options, 
-            _mockEmailService.Object, 
-            mockConfig.Object
-        );
+        _authService = new AuthService(_mockUserMgr.Object,
+                                       options,
+                                       _mockEmailService.Object,
+                                       mockConfig.Object);
     }
 
     [Fact] // --- TEST A: Valid credentials return a token ---
@@ -89,25 +88,25 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task RegisterAsync_EmailAlreadyExists_ThrowsException()
+    public async Task RegisterAsync_EmailAlreadyExists_ReturnsErrorsInResponse()
     {
         // Arrange
-        var registerDto = new RegisterDto
-        {
-            Email = "existing@test.com",
-            Password = "Password123!",
-            Name = "New User"
-        };
+        var registerDto = new RegisterDto { Email = "existing@test.com", Password = "Password123!" };
 
-        // We simulate that CreateAsync fails because the user already exists
+        // Mock FindByEmailAsync to return null (so it proceeds to CreateAsync)
+        _mockUserMgr.Setup(x => x.FindByEmailAsync(registerDto.Email))
+            .ReturnsAsync((ApplicationUser)null!);
+
+        // Mock CreateAsync to fail
         _mockUserMgr.Setup(x => x.CreateAsync(It.IsAny<ApplicationUser>(), registerDto.Password))
-            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Email already taken " }));
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Email already taken" }));
 
-        // Act & Assert 
-        var exception = await Assert.ThrowsAsync<Exception>(() =>
-            _authService.RegisterAsync(registerDto));
+        // Act
+        var result = await _authService.RegisterAsync(registerDto);
 
-        Assert.Contains("Email already taken", exception.Message);
+        // Assert 
+        Assert.NotNull(result.Errors);
+        Assert.Contains("Email already taken", result.Errors);
     }
 
     [Fact]
@@ -210,17 +209,23 @@ public class AuthServiceTests
     public async Task RegisterAsync_ExistingUnconfirmedUser_ResendsEmail()
     {
         // Arrange
-        var existingUser = new ApplicationUser { Email = "already@here.com", EmailConfirmed = false };
-        var dto = new RegisterDto { Email = "already@here.com", Password = "Password123!", Name = "Retry" };
+        var existingUser = new ApplicationUser
+        {
+            Id = 1,
+            Email = "already@here.com",
+            EmailConfirmed = false,
+            Name = "Retry User"
+        };
+        var dto = new RegisterDto { Email = "already@here.com", Password = "Password123!", ConfirmPassword = "Password123!", Name = "Retry" };
 
         _mockUserMgr.Setup(x => x.FindByEmailAsync(dto.Email)).ReturnsAsync(existingUser);
         _mockUserMgr.Setup(x => x.GenerateEmailConfirmationTokenAsync(existingUser)).ReturnsAsync("new-token");
 
         // Act
         var result = await _authService.RegisterAsync(dto);
-
+        
         // Assert
-        Assert.Contains("uncorfimed", result.Message); // Verifying our custom logic message
+        Assert.Contains("unconfirmed", result.Message.ToLower()); // Verifying our custom logic message
         _mockEmailService.Verify(x => x.SendEmailAsync(dto.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
 

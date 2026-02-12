@@ -1,6 +1,9 @@
 ﻿using ExpenseTracker.Application.Exceptions;
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
+using Serilog.Context; // Required for LogContext
 
 namespace ExpenseTracker.API.Middleware
 {
@@ -17,65 +20,69 @@ namespace ExpenseTracker.API.Middleware
 
         public async Task InvokeAsync(HttpContext httpContext)
         {
-            try
+            // Get the id
+            var traceId = httpContext.TraceIdentifier;
+            
+            using (LogContext.PushProperty("TraceId", traceId))
             {
-                await _next(httpContext);
+                try
+                {
+                    await _next(httpContext);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Exception Occurred: {Message}", ex.Message);
+                    await HandleExceptionAsync(httpContext, ex, traceId);
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"An unhandled exception occured during request processing. \n{ex.Message}");
-                await HandleExceptionAsync(httpContext, ex);
-            }
+            
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static async Task HandleExceptionAsync(HttpContext context, Exception exception, string traceId)
         {
-            context.Response.ContentType = "application/json";
-
-            var statusCode = HttpStatusCode.InternalServerError;
-            object errorResponse = new { message = "An unexpected error occurred." };
-
-            switch (exception)
+            if (context.Response.HasStarted)
             {
-                case NotFoundException notFoundEx:
-                case KeyNotFoundException:
-                    statusCode = HttpStatusCode.NotFound;
-                    errorResponse = new { message = exception.Message };
-                    break;
-
-                case ValidationException valEx:
-                    statusCode = HttpStatusCode.BadRequest;
-                    errorResponse = new
-                    {
-                        statusCode = (int)statusCode,
-                        title = "One or more validation errors occurred.",
-                        errors = valEx.Errors
-                    };
-                    break;
-
-                case UnauthorizedAccessException authEx:
-                    statusCode = HttpStatusCode.Unauthorized;
-                    errorResponse = new { message = authEx.Message };
-                    break;
-
-                case InvalidOperationException invEx:
-                    statusCode = HttpStatusCode.Conflict;
-                    errorResponse = new { message = invEx.Message };
-                    break;
-
-                default:
-                    if (exception.Message.Contains("Registration failed"))
-                    {
-                        statusCode = HttpStatusCode.BadRequest;
-                        errorResponse = new { message = exception.Message };
-                    }
-                    break;
+                return;
             }
 
-            context.Response.StatusCode = (int)statusCode;
+            var statusCode = exception switch
+            {
+                NotFoundException or KeyNotFoundException => HttpStatusCode.NotFound,
+                ValidationException => HttpStatusCode.BadRequest,
+                UnauthorizedAccessException => HttpStatusCode.Unauthorized,
+                InvalidOperationException => HttpStatusCode.Conflict,
+                _ => HttpStatusCode.InternalServerError
+            };
 
-            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-            return context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, options));
+            context.Response.StatusCode = (int)statusCode;
+            context.Response.ContentType = "application/problem+json";
+
+            var problemDetails = new ProblemDetails
+            {
+                Status = (int)statusCode,
+                Type = $"https://httpstatuses.com/{(int)statusCode}",
+                Title = exception.GetType().Name,
+                Detail = exception.Message,
+                Instance = context.Request.Path
+            };
+
+            // Adds the TraceId to the JSON response so the frontend sees it
+            problemDetails.Extensions["traceId"] = traceId;
+
+            // Special handling for Validation Errors to match RFC format
+            if (exception is ValidationException valEx)
+            {
+                problemDetails.Extensions["errors"] = valEx.Errors;
+            }
+
+            var options = new JsonSerializerOptions 
+            { 
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            await context.Response.WriteAsJsonAsync(problemDetails, options, contentType: "application/problem+json");
         }
     }
 }

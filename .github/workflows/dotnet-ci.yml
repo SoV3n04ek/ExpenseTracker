@@ -1,0 +1,43 @@
+name: .NET CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: expense_user
+          POSTGRES_PASSWORD: expense_password
+          POSTGRES_DB: expense_tracker_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4 
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+    
+    - name: Restore dependencies
+      run: dotnet restore backend/ExpenseTracker.API/ExpenseTracker.API.sln
+    
+    - name: Build
+      run: dotnet build backend/ExpenseTracker.API/ExpenseTracker.API.sln --no-restore
+    
+    - name: Test
+      run: dotnet test backend/ExpenseTracker.API/ExpenseTracker.API.sln --no-build --verbosity normal

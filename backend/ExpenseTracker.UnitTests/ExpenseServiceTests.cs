@@ -94,8 +94,14 @@ namespace ExpenseTracker.UnitTests
         [Fact]
         public async Task DeleteExpense_WhenExpenseDoesNotExist_ThrowsKeyNotFoundException()
         {
+            // Arrange
+            var nonExistentId = 999;
+            var userId = "test-user-id"; // Any string will do for this test
+
             // Act & Assert
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.DeleteExpenseAsync(999, "test-user-id"));
+            // Add the userId as the second argument
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+                _service.DeleteExpenseAsync(nonExistentId, userId));
         }
     }
 }

@@ -17,192 +17,219 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Threading.RateLimiting;
 using System.Net;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Logging.AddConsole();
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString, b =>
-        b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)
-    ));
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
+try
 {
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 8;
-    options.SignIn.RequireConfirmedEmail = true;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+    var builder = WebApplication.CreateBuilder(args);
 
-// 3. Authentication (JWT)
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+    // Serilog to the container
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .Enrich.WithThreadId()
+        .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter()) // Json for Docker
+    );
+
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(connectionString, b =>
+            b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)
+        ));
+
+    builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-    };
-});
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 8;
+        options.SignIn.RequireConfirmedEmail = true;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
-builder.Services.AddScoped<IExpenseService, ExpenseService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-
-builder.Services.AddValidatorsFromAssemblyContaining<CreateExpenseDtoValidator>();
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add<ExpenseTracker.API.Filters.ValidateUserFilter>();
-});
-builder.Services.AddEndpointsApiExplorer();
-
-// Cors
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AngularDevPolicy", policy =>
+    // 3. Authentication (JWT)
+    builder.Services.AddAuthentication(options =>
     {
-        policy.WithOrigins("http://localhost:4200")
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
-    });
-});
-
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "ExpenseTracker API", Version = "v1" });
-
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
     {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter your jwt token in the text box below. Example: 'abc123token'"
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
     });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    builder.Services.AddScoped<IExpenseService, ExpenseService>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddScoped<IEmailService, EmailService>();
+
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+    builder.Services.AddValidatorsFromAssemblyContaining<CreateExpenseDtoValidator>();
+    builder.Services.AddFluentValidationAutoValidation();
+    builder.Services.AddControllers(options =>
     {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
+        options.Filters.Add<ExpenseTracker.API.Filters.ValidateUserFilter>();
     });
-});
+    builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-
-// Rate Limiting Configuration
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = (int)HttpStatusCode.TooManyRequests;
-    
-    options.OnRejected = async (context, token) =>
+    // Cors
+    builder.Services.AddCors(options =>
     {
-        context.HttpContext.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
-        context.HttpContext.Response.ContentType = "application/json";
-
-        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        options.AddPolicy("AngularDevPolicy", policy =>
         {
-            context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
-        }
-
-        var response = new { message = "Too many attempts. Please try again in 60 seconds." };
-        await context.HttpContext.Response.WriteAsJsonAsync(response, token);
-    };
-
-    options.AddPolicy("AuthPolicy", context =>
-    {
-        var config = context.RequestServices.GetRequiredService<IConfiguration>();
-        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
-
-        // Default to a high limit in Testing environment
-        int defaultPermitLimit = env.IsEnvironment("Testing") ? 10000 : 5;
-        
-        var pLimit = config.GetValue<int>("RateLimit:PermitLimit", defaultPermitLimit);
-        var wMinutes = config.GetValue<int>("RateLimit:WindowMinutes", 1);
-        
-        var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-        return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = pLimit,
-            Window = TimeSpan.FromMinutes(wMinutes),
-            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-            QueueLimit = 0
+            policy.WithOrigins("http://localhost:4200")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
         });
     });
-});
 
-// Forwarded Headers for Proxy support (e.g. Nginx)
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
-});
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new OpenApiInfo { Title = "ExpenseTracker API", Version = "v1" });
 
-var app = builder.Build();
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "Bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Enter your jwt token in the text box below. Example: 'abc123token'"
+        });
 
-// Automatic Database Migrations
-if (builder.Configuration.GetValue<bool>("RUN_MIGRATIONS"))
-{
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await dbContext.Database.MigrateAsync();
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+    });
+
+    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+    // Rate Limiting Configuration
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = (int)HttpStatusCode.TooManyRequests;
+    
+        options.OnRejected = async (context, token) =>
+        {
+            context.HttpContext.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
+            context.HttpContext.Response.ContentType = "application/json";
+
+            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            {
+                context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+            }
+
+            var response = new { message = "Too many attempts. Please try again in 60 seconds." };
+            await context.HttpContext.Response.WriteAsJsonAsync(response, token);
+        };
+
+        options.AddPolicy("AuthPolicy", context =>
+        {
+            var config = context.RequestServices.GetRequiredService<IConfiguration>();
+            var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+
+            // Default to a high limit in Testing environment
+            int defaultPermitLimit = env.IsEnvironment("Testing") ? 10000 : 5;
+        
+            var pLimit = config.GetValue<int>("RateLimit:PermitLimit", defaultPermitLimit);
+            var wMinutes = config.GetValue<int>("RateLimit:WindowMinutes", 1);
+        
+            var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = pLimit,
+                Window = TimeSpan.FromMinutes(wMinutes),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+        });
+    });
+
+    // Forwarded Headers for Proxy support (e.g. Nginx)
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+
+    var app = builder.Build();
+
+    // Automatic Database Migrations
+    if (builder.Configuration.GetValue<bool>("RUN_MIGRATIONS"))
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+    
+    app.UseForwardedHeaders();
+
+    // First: Catch errors from everything below
+    app.UseCustomExceptionHandler();  
+
+    // Request Logging (logs every http request automatically)
+    app.UseSerilogRequestLogging();
+    
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+    else
+    {
+        app.UseCors("AngularDevPolicy");
+    }
+
+    app.UseHttpsRedirection();
+    app.UseRateLimiter();
+
+    app.UseAuthentication();
+    app.UseAuthorization(); 
+
+    app.MapControllers();
+
+    app.Run();
 }
-
-app.UseForwardedHeaders();
-
-app.UseCustomExceptionHandler();
-
-if (app.Environment.IsDevelopment())
+catch (Exception ex)
 {
-    app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    Log.Fatal(ex, "Application terminated unexpectedly");
 }
-else
+finally 
 {
-    app.UseCors("AngularDevPolicy");
+    Log.CloseAndFlush();
 }
-
-app.UseHttpsRedirection();
-app.UseRateLimiter();
-
-app.UseAuthentication();
-app.UseAuthorization(); 
-
-app.MapControllers();
-
-app.Run();
-
 public partial class Program { }

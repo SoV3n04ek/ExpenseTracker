@@ -89,7 +89,7 @@ namespace ExpenseTracker.Application.Services
                 System.Text.Encoding.UTF8.GetBytes(token));
 
             // Pointing to Frontend UI (ConfirmEmailComponent)
-            var baseUrl = _configuration.GetValue<string>("ClientSettings:BaseUrl") ?? "http://localhost:4200";
+            var baseUrl = _configuration["ClientSettings:BaseUrl"] ?? "http://localhost:4200";
             var confirmationLink = $"{baseUrl.TrimEnd('/')}/confirm-email?userId={user.Id}&token={encodedToken}";
 
             await _emailService.SendEmailAsync(user.Email!, "Confirm your email",
