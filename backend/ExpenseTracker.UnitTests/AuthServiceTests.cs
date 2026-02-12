@@ -39,9 +39,7 @@ public class AuthServiceTests
 
         // 2. Use Options.Create to wrap your settings
         var options = Options.Create(jwtSettings);
-        var mockConfig = new Mock<IConfiguration>();
-        mockConfig.Setup(c => c["ClientSettings:BaseUrl"]).Returns("http://localhost:4200");
-
+        
         // 3. Pass the options to the service
         _authService = new AuthService(_mockUserMgr.Object,
                                        options,
