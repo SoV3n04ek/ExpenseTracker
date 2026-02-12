@@ -10,16 +10,12 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    env:
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-
     services:
       postgres:
         image: postgres:16-alpine
-
         env:
           POSTGRES_USER: expense_user
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_PASSWORD: expense_password
           POSTGRES_DB: expense_tracker_db
         ports:
           - 5432:5432
