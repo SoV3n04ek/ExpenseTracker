@@ -14,9 +14,9 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: ExpenseTrackerTestDb
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: expense_tracker
+          POSTGRES_USER: expense_user
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: expense_tracker_db
         ports:
           - 5432:5432
         options: >-
