@@ -1,9 +1,11 @@
 ﻿using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Application.Interfaces;
 using ExpenseTracker.Domain.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
 
 namespace ExpenseTracker.API.Controllers
 {
@@ -43,6 +45,20 @@ namespace ExpenseTracker.API.Controllers
         public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
         {
             var response = await _authService.LoginAsync(dto);
+            return Ok(response);
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<ActionResult<AuthResponseDto>> GetCurrentUser()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = await _authService.GetCurrentUserAsync(userId);
             return Ok(response);
         }
 
