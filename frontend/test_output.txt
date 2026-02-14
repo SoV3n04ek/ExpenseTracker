@@ -1,0 +1,99 @@
+
+> expense-tracker-ui@0.0.0 test
+> ng test --watch=false
+
+[33m>[39m Building...
+[32m√[39m Building...
+[1mInitial chunk files[22m     [2m | [22m[1mNames[22m                [2m | [22m [1mRaw size[22m
+[32mspec-dashboard.js[39m       [2m | [22m[2mspec-dashboard[22m       [2m | [22m [36m69.33 kB[39m[2m | [22m
+[32mspec-login.js[39m           [2m | [22m[2mspec-login[22m           [2m | [22m [36m12.98 kB[39m[2m | [22m
+[32mstyles.css[39m              [2m | [22m[2mstyles[22m               [2m | [22m [36m12.85 kB[39m[2m | [22m
+[32mchunk-JJ7USOH6.js[39m       [2m | [22m[2m-[22m                    [2m | [22m [36m12.70 kB[39m[2m | [22m
+[32mchunk-GGMKK6XV.js[39m       [2m | [22m[2m-[22m                    [2m | [22m  [36m6.67 kB[39m[2m | [22m
+[32mspec-sidebar.js[39m         [2m | [22m[2mspec-sidebar[22m         [2m | [22m  [36m5.21 kB[39m[2m | [22m
+[32mchunk-A44TLS2P.js[39m       [2m | [22m[2m-[22m                    [2m | [22m  [36m4.74 kB[39m[2m | [22m
+[32mspec-expense.store.js[39m   [2m | [22m[2mspec-expense.store[22m   [2m | [22m  [36m4.04 kB[39m[2m | [22m
+[32mspec-auth.store.js[39m      [2m | [22m[2mspec-auth.store[22m      [2m | [22m  [36m3.77 kB[39m[2m | [22m
+[32mspec-auth.interceptor.js[39m[2m | [22m[2mspec-auth.interceptor[22m[2m | [22m  [36m2.73 kB[39m[2m | [22m
+[32mspec-app.js[39m             [2m | [22m[2mspec-app[22m             [2m | [22m  [36m2.50 kB[39m[2m | [22m
+[32minit-testbed.js[39m         [2m | [22m[2minit-testbed[22m         [2m | [22m  [36m1.20 kB[39m[2m | [22m
+[32mchunk-PE2CWQD5.js[39m       [2m | [22m[2m-[22m                    [2m | [22m[36m860 bytes[39m[2m | [22m
+[32mchunk-PCYVIZJG.js[39m       [2m | [22m[2m-[22m                    [2m | [22m[36m165 bytes[39m[2m | [22m
+
+[1m [22m                       [2m | [22m[1mInitial total[22m        [2m | [22m[1m139.75 kB[22m
+
+Application bundle generation complete. [2.308 seconds] - 2026-02-13T20:41:54.545Z
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/ThatsMyFolder/projects/csharpLearn/ExpenseTracker/frontend[39m
+
+ [32m✓[39m [30m[46m expense-tracker-ui [49m[39m src/app/core/interceptors/auth.interceptor.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [31m❯[39m [30m[46m expense-tracker-ui [49m[39m src/app/core/store/auth.store.spec.ts [2m([22m[2m0 test[22m[2m)[22m
+[90mstdout[2m | src/app/app.spec.ts[2m > [22m[2mApp[2m > [22m[2mshould create the app
+[22m[39mAuthStore Initialized: [1mnull[22m
+
+[90mstdout[2m | src/app/app.spec.ts[2m > [22m[2mApp[2m > [22m[2mshould render router-outlet
+[22m[39mAuthStore Initialized: [1mnull[22m
+
+ [32m✓[39m [30m[46m expense-tracker-ui [49m[39m src/app/app.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m [30m[46m expense-tracker-ui [49m[39m src/app/shared/components/sidebar/sidebar.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 80[2mms[22m[39m
+ [31m❯[39m [30m[46m expense-tracker-ui [49m[39m src/app/core/store/expense.store.spec.ts [2m([22m[2m4 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 38[2mms[22m[39m
+     [32m✓[39m should load expenses and update state[32m 20[2mms[22m[39m
+[31m     [31m×[31m should optimistically delete an expense and show undo notification[39m[32m 9[2mms[22m[39m
+[31m     [31m×[31m should undo deletion and restore state[39m[32m 5[2mms[22m[39m
+     [32m✓[39m should handle pagination and append items for next page[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m expense-tracker-ui [49m[39m src/app/features/auth/login/login.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 237[2mms[22m[39m
+ [32m✓[39m [30m[46m expense-tracker-ui [49m[39m src/app/features/dashboard/dashboard.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 508[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m [30m[46m expense-tracker-ui [49m[39m src/app/core/store/auth.store.spec.ts[2m [ src/app/core/store/auth.store.spec.ts ][22m
+[31m[1mError[22m: zone-testing.js is needed for the fakeAsync() test helper but could not be found.
+        Please make sure that your environment includes zone.js/testing[39m
+[90m [2m❯[22m withFakeAsyncTestModule node_modules/@angular/core/fesm2022/testing.mjs:[2m297:11[22m[39m
+[90m [2m❯[22m fakeAsync node_modules/@angular/core/fesm2022/testing.mjs:[2m311:10[22m[39m
+[36m [2m❯[22m src/app/core/store/auth.store.spec.ts:[2m100:59[22m[39m
+    [90m 98| [39m    })[33m;[39m
+    [90m 99| [39m
+    [90m100| [39m    it('should validate session on init if token exists', fakeAsync(()…
+    [90m   | [39m                                                          [31m^[39m
+    [90m101| [39m        window[33m.[39mlocalStorage[33m.[39m[34msetItem[39m([32m'token'[39m[33m,[39m [32m'mock-token'[39m)[33m;[39m
+    [90m102| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m [30m[46m expense-tracker-ui [49m[39m src/app/core/store/expense.store.spec.ts[2m > [22mExpenseStore[2m > [22mshould optimistically delete an expense and show undo notification
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called at least once[39m
+[36m [2m❯[22m src/app/core/store/expense.store.spec.ts:[2m75:50[22m[39m
+    [90m 73| [39m
+    [90m 74| [39m        [34mexpect[39m(store[33m.[39m[34mexpenses[39m())[33m.[39mnot[33m.[39m[34mtoContain[39m(expenseToDelete)[33m;[39m
+    [90m 75| [39m        [34mexpect[39m(notificationServiceMock[33m.[39mshowUndo)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m   | [39m                                                 [31m^[39m
+    [90m 76| [39m
+    [90m 77| [39m        [90m// Advance time to trigger actual deletion[39m
+[90m [2m❯[22m new ZoneAwarePromise node_modules/zone.js/fesm2015/zone.js:[2m2701:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[46m expense-tracker-ui [49m[39m src/app/core/store/expense.store.spec.ts[2m > [22mExpenseStore[2m > [22mshould undo deletion and restore state
+[31m[1mAssertionError[22m: expected [] to include { id: 1, description: 'Lunch', …(3) }[39m
+[36m [2m❯[22m src/app/core/store/expense.store.spec.ts:[2m98:34[22m[39m
+    [90m 96| [39m        store[33m.[39m[34mundoDelete[39m(expenseToDelete[33m.[39mid)[33m;[39m
+    [90m 97| [39m
+    [90m 98| [39m        [34mexpect[39m(store[33m.[39m[34mexpenses[39m())[33m.[39m[34mtoContain[39m(expenseToDelete)[33m;[39m
+    [90m   | [39m                                 [31m^[39m
+    [90m 99| [39m
+    [90m100| [39m        [90m// Advance time - should NOT trigger DELETE call[39m
+[90m [2m❯[22m new ZoneAwarePromise node_modules/zone.js/fesm2015/zone.js:[2m2701:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m15 passed[39m[22m[90m (17)[39m
+[2m   Start at [22m 21:41:54
+[2m   Duration [22m 4.19s[2m (transform 943ms, setup 6.01s, import 1.89s, tests 959ms, environment 12.60s)[22m
+

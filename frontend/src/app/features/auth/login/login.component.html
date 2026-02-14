@@ -10,27 +10,27 @@
       </p>
     </div>
 
-    @if (store.status() === 'unconfirmed') {
+    @if (authService.status() === 'unconfirmed') {
     <div class="warning-alert">
       <p><strong>Unconfirmed Account</strong></p>
-      <p>{{ store.error() }}</p>
-      <button mat-button color="primary" (click)="store.resendConfirmation()" [disabled]="store.isLoading()"
+      <p>{{ authService.error() }}</p>
+      <button mat-button color="primary" (click)="authService.resendConfirmation()" [disabled]="authService.isLoading()"
         class="mt-2">
         Resend confirmation link
       </button>
     </div>
     }
 
-    @if (store.status() === 'error' && store.error()) {
+    @if (authService.status() === 'error' && authService.error()) {
     <div class="error-alert">
-      @if (isArray(store.error())) {
+      @if (isArray(authService.error())) {
       <ul class="mb-0">
-        @for (err of asArray(store.error()); track $index) {
+        @for (err of asArray(authService.error()); track $index) {
         <li>{{ err }}</li>
         }
       </ul>
       } @else {
-      <p>{{ store.error() }}</p>
+      <p>{{ authService.error() }}</p>
       }
     </div>
     }
@@ -60,9 +60,9 @@
       </div>
 
       <button mat-flat-button color="primary" type="submit" class="btn-primary"
-        [disabled]="loginForm.invalid || store.isLoading()">
+        [disabled]="loginForm.invalid || authService.isLoading()">
 
-        @if (store.isLoading()) {
+        @if (authService.isLoading()) {
         <span class="loading-container">
           Signing in...
         </span>

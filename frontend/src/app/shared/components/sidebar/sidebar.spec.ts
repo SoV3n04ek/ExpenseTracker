@@ -1,18 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Sidebar } from './sidebar.component';
+import { SidebarComponent } from './sidebar.component';
+import { provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 
 describe('Sidebar', () => {
-  let component: Sidebar;
-  let fixture: ComponentFixture<Sidebar>;
+  let component: SidebarComponent;
+  let fixture: ComponentFixture<SidebarComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Sidebar]
+      imports: [SidebarComponent],
+      providers: [provideRouter([])]
     })
-    .compileComponents();
+      .compileComponents();
 
-    fixture = TestBed.createComponent(Sidebar);
+    fixture = TestBed.createComponent(SidebarComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

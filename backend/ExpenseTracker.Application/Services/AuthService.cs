@@ -119,6 +119,17 @@ namespace ExpenseTracker.Application.Services
             return await GenerateAuthResponse(user);
         }
 
+        public async Task<AuthResponseDto> GetCurrentUserAsync(int userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException("User not found");
+            }
+
+            return await GenerateAuthResponse(user);
+        }
+
         private Task<AuthResponseDto> GenerateAuthResponse(ApplicationUser user)
         {
             // 1. Define the claims (user data we want in the token)
