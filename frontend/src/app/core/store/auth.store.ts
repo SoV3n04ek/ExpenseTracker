@@ -151,9 +151,13 @@ export const AuthStore = signalStore(
           http.get<AuthResponseDto>(`${environment.apiUrl}/auth/me`)
         );
         patchState(store, { user, isLoading: false, status: 'idle' });
-      } catch (err) {
-        localStorage.removeItem('token');
-        patchState(store, { user: null, isLoading: false, status: 'idle' });
+      } catch (err: any) {
+        // Only clear token if the server explicitly says it's invalid (401)
+        if (err.status === 401) {
+          localStorage.removeItem('token');
+          patchState(store, { user: null });
+        }
+        patchState(store, { isLoading: false, status: 'idle' });
       }
     },
 

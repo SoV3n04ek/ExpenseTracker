@@ -5,7 +5,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { RouterModule } from '@angular/router';
-import { AuthStore } from '../../../core/store/auth.store';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -23,23 +23,20 @@ import { AuthStore } from '../../../core/store/auth.store';
 })
 export class LoginComponent {
   private fb = inject(FormBuilder);
-  readonly store = inject(AuthStore);
+  readonly authService = inject(AuthService); // Use AuthService instead of AuthStore
+
   isArray = Array.isArray;
   asArray(val: any): string[] { return val as string[]; }
 
   loginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [
-      Validators.required,
-      Validators.minLength(8),
-      Validators.maxLength(64),
-      Validators.pattern(/^(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).*$/)
-    ]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
   onSubmit() {
     if (this.loginForm.valid) {
-      this.store.login(this.loginForm.getRawValue());
+      // Subscribing triggers the tap logic in AuthService
+      this.authService.login(this.loginForm.getRawValue()).subscribe();
     }
   }
 }

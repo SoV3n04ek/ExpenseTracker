@@ -11,22 +11,6 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/registration/registration.component').then(m => m.RegistrationComponent)
   },
   {
-    path: 'register-success',
-    loadComponent: () => import('./features/auth/register-success/register-success.component').then(m => m.RegisterSuccessComponent)
-  },
-  {
-    path: 'confirm-email',
-    loadComponent: () => import('./features/auth/confirm-email/confirm-email.component').then(m => m.ConfirmEmailComponent)
-  },
-  {
-    path: 'reset-password',
-    loadComponent: () => import('./features/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
-  },
-  {
-    path: 'forgot-password',
-    loadComponent: () => import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
-  },
-  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./shared/components/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
@@ -38,5 +22,5 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '**', redirectTo: 'login' }
 ];
